@@ -20,7 +20,7 @@
       type = lib.types.attrsOf (wlib.types.file pkgs);
       default = { };
       description = ''
-        Bat themes to link to theme directory
+        Bat themes to copy to `themes/` directory
       '';
     };
   };
