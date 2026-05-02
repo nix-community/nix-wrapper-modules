@@ -36,7 +36,7 @@
     in
     {
       package = lib.mkDefault pkgs.bat;
-      env.BAT_CONFIG_DIR = "${placeholder "out"}/themes";
+      env.BAT_CONFIG_DIR = "${placeholder "out"}/${config.binName}-config/themes";
       constructFiles = {
         generatedConfig = {
           content = builtins.readFile config.configFile.path;
