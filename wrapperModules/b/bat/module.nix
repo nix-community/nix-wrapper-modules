@@ -10,7 +10,9 @@
 
   options = {
     configFile = lib.mkOption {
-      type = wlib.types.file pkgs;
+      type = wlib.types.file {
+        path = lib.mkOptionDefault config.constructFiles.generatedConfig.path;
+      };
       default.content = "";
       description = ''
         Bat flags to include via config file
