@@ -39,7 +39,7 @@
       env.BAT_CONFIG_DIR = "${placeholder "out"}/${config.binName}-config/themes";
       constructFiles = {
         generatedConfig = {
-          content = builtins.readFile config.configFile.path;
+          content = config.configFile.content;
           relPath = "${config.binName}-config/config";
         };
       }
