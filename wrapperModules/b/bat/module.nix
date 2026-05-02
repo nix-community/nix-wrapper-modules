@@ -25,6 +25,13 @@
         Bat themes to copy to `themes/` directory
       '';
     };
+    syntaxes = lib.mkOption {
+      type = lib.types.attrsOf (wlib.types.file pkgs);
+      default = { };
+      description = ''
+        Bat/Sublime syntaxes to copy to `syntaxes/` directory
+      '';
+    };
   };
 
   config =
@@ -35,6 +42,12 @@
           relPath = "themes/${name}";
         };
       }) config.themes;
+      syntaxes-constructFiles = lib.concatMapAttrs (name: value: {
+        "syntaxes-${name}" = {
+          content = builtins.readFile value.path;
+          relPath = "syntaxes/${name}";
+        };
+      }) config.syntaxes;
     in
     {
       package = lib.mkDefault pkgs.bat;
@@ -45,7 +58,8 @@
           relPath = "${config.binName}-config/config";
         };
       }
-      // themes-constructFiles;
+      // themes-constructFiles
+      // syntaxes-constructFiles;
       meta.maintainers = [ wlib.maintainers.appleptree ];
     };
 }
