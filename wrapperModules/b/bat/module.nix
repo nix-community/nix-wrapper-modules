@@ -26,7 +26,7 @@
       '';
     };
     syntaxes = lib.mkOption {
-      type = lib.types.attrsOf (wlib.types.file pkgs);
+      type = lib.types.attrsOf lib.types.string;
       default = { };
       description = ''
         Bat/Sublime syntaxes to copy to `syntaxes/` directory
@@ -44,7 +44,7 @@
       }) config.themes;
       syntaxes-constructFiles = lib.concatMapAttrs (name: value: {
         "syntaxes-${name}" = {
-          content = builtins.readFile value.path;
+          content = builtins.readFile value;
           relPath = "syntaxes/${name}";
         };
       }) config.syntaxes;
