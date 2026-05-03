@@ -29,7 +29,7 @@
       type = lib.types.attrsOf wlib.types.stringable;
       default = { };
       description = ''
-        Bat/Sublime syntaxes to copy to `syntaxes/` directory
+        Paths of bat/sublime syntaxes to symnlink to `syntaxes/` directory
       '';
     };
   };
@@ -42,12 +42,6 @@
           relPath = "themes/${name}";
         };
       }) config.themes;
-      syntaxes-constructFiles = lib.concatMapAttrs (name: value: {
-        "syntaxes-${name}" = {
-          content = builtins.readFile value;
-          relPath = "syntaxes/${name}";
-        };
-      }) config.syntaxes;
     in
     {
       package = lib.mkDefault pkgs.bat;
@@ -58,8 +52,12 @@
           relPath = "${config.binName}-config/config";
         };
       }
-      // themes-constructFiles
-      // syntaxes-constructFiles;
+      // themes-constructFiles;
+      buildCommand.makeBatSyntaxes =
+        "mkdir -p ${placeholder "out"}/syntaxes\n"
+        + lib.concatMapAttrsStringSep "\n" (
+          name: value: "ln -s ${value} ${placeholder "out"}/syntaxes/${name}"
+        ) config.syntaxes;
       meta.maintainers = [ wlib.maintainers.appleptree ];
     };
 }
