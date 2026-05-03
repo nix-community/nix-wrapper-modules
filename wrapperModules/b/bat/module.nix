@@ -26,7 +26,7 @@
       '';
     };
     syntaxes = lib.mkOption {
-      type = lib.types.attrsOf lib.types.string;
+      type = lib.types.attrsOf wlib.types.stringable;
       default = { };
       description = ''
         Bat/Sublime syntaxes to copy to `syntaxes/` directory
