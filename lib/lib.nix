@@ -27,6 +27,8 @@ in
 
   makeWrapper = import ./makeWrapper { inherit lib wlib; };
 
+  generators = import ./generators.nix { inherit lib wlib; };
+
   core = toString ./core.nix;
 
   /**
@@ -586,143 +588,8 @@ in
   */
   repeatStr = str: num: builtins.concatStringsSep "" (builtins.genList (_: str) num);
 
-  /**
-    Converts a Nix value to a KDL document string.
-
-    The top-level argument, and individual nodes can be either an attrset or a list of attrsets:
-    - Attrset: each pair becomes a node (in a child block if not the top level)
-    - List of attrsets: each attrset of nodes is processed, and then they are concatenated in sequence.
-      This is useful for when there are repeated node names
-
-    Inside nodes, attrsets and lists of attrsets create child blocks.
-
-    For any individual node, instead of providing the content as an attrset or an attrset of lists,
-    you may instead provide a function.
-
-    Functions produce nodes with:
-    - `props`: (optional) node arguments. May be an attrset, or a list containing mixed values and attrsets.
-      Plain values are provided as arguments. Attrset values are mapped to properties, i.e. `nodename "key"="value" {}`.
-      These values may not be sensibly nested further.
-    - `content`: (optional) child block content (attrs or list of attrs, like top level)
-    - `type`: (optional) a string to be placed in a type annotation on the node name. (If you provide a function returning a set with this field to props, it will add it to the value instead)
-    - `custom`: (optional) a function of type `{ indent, lvl, name } -> string` which is to replace the node (including its name) with a custom string.
-
-    This means you can make a node with only a name like `toKdl { mynode = _: { }; }`, which will produce a string containing just `mynode`
-
-    If you provide a list which contains more than just attrsets as a node's value, it will be assumed to be arguments/properties instead.
-
-    If you provide a primitive value, it will likewise be considered to be an argument.
-
-    Otherwise, it will be assumed to be a block, and to pass arguments, you should use the function form.
-
-    The argument to the function is provided by calling the function with `lib.fix`.
-
-    The top level argument to `wlib.toKdl` may also be a function, but it is slightly different
-    than the function form you can provide to a normal node.
-
-    As a top-level argument, rather than passing the content directly as the argument,
-    you may provide a function like:
-
-    ```nix
-    _: {
-      lvl = 0;
-      indent = "  ";
-      version = 2; # or 1 (default 2)
-      content = set_or_list_of_sets; # required
-    }
-    # This allows you to set the indentation level of the generated nodes, and indentation width/character.
-    ```
-
-    Example:
-
-    ```nix
-    {
-      # plain node (no args, no block)
-      a = _: { };
-      # primitive → argument
-      b = 1;
-      # list of primitives → multiple args
-      c = [ "x" 2 true null ];
-      # attrset → child block
-      d = {
-        x = 1;
-      };
-      # list of attrsets → repeated child nodes
-      e = [
-        { x = 1; }
-        { x = 2; }
-      ];
-      # function form: props (args + properties) + content (block)
-      f = _: {
-        props = [
-          "arg1"
-          { key = "val"; }
-        ];
-        content = {
-          g = _: { };
-        };
-      };
-      # function with only props (no block)
-      h = _: {
-        props = { k = "v"; };
-      };
-      # function with only content (block, no props)
-      i = _: {
-        content = {
-          j = 1;
-        };
-      };
-      # nested combination
-      k = {
-        l = [
-          { m = "a"; }
-          { m = "b"; }
-        ];
-      };
-      # typed argument in props (list form)
-      n = [ (_: { type = "string"; content = "o"; }) ];
-      # typed argument and typed property and block content
-      p = _: {
-        props = [ (_: { type = "string"; content = "q"; }) { r = (_: { type = "string"; content = "s"; }); } ];
-        type = "string";
-        content = {
-          t = "u";
-        };
-      };
-    }
-    ```
-
-    ```kdl
-      "a"
-      "b" 1
-      "c" "x" 2 true #null
-      "d"  {
-        "x" 1
-      }
-      "e"  {
-        "x" 1
-        "x" 2
-      }
-      "f" "arg1" "key"="val" {
-        "g"
-      }
-      "h" "k"="v"
-      "i"  {
-        "j" 1
-      }
-      "k"  {
-        "l"  {
-          "m" "a"
-          "m" "b"
-        }
-      }
-      "n" (string)"o"
-      (string)"p" (string)"q" "r"=(string)"s" {
-        "t" "u"
-      }
-    ```
-  */
-  toKdl = import ./toKdl.nix { inherit lib wlib; };
+  # TODO: deprecated, remove in may 2027
+  toKdl = lib.warn "wlib.toKdl has been moved to wlib.generators.toKdl and is now deprecated" wlib.generators.toKdl;
 
   /**
     Sanitize a string into a valid environment variable name.

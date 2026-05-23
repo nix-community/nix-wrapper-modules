@@ -95,6 +95,15 @@
               ${pkgs.nixdoc}/bin/nixdoc --category "docs" --description '`wlib.docs` set documentation' --file '${../../lib/docs/default.nix}' --prefix "wlib" >> $generated/wrappers-lib/docs.md
             '';
           }
+          {
+            name = "`wlib.generators`";
+            data = "numbered";
+            path = "lib/generators.md";
+            src = "${placeholder "generated"}/wrappers-lib/generators.md";
+            build = ''
+              ${pkgs.nixdoc}/bin/nixdoc --category "generators" --description '`wlib.generators` set documentation' --file '${../../lib/generators.nix}' --prefix "wlib" >> $generated/wrappers-lib/generators.md
+            '';
+          }
         ];
       }
       {
