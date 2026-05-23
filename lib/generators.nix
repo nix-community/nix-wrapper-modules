@@ -223,4 +223,119 @@
       toKdl (res.version or 2) (res.indent or "  ") (res.lvl or 0) res.content
     else
       toKdl 2 "  " 0 value;
+
+  /**
+      Converts a Nix value to a Hypr conf string.
+
+      Parameters:
+      - `attrs`: Attrset of hypr conf keywords assigned either a value (string, boolean, number), a list of such values or an attrset that has the same structure:
+          value: a keyword statement is generated
+          list: for each value a separate keyword statement is generated
+          attrset: a section to configure variables is generated
+      - `indentLevel`: (optional, default: 0) Start at a custom indent level
+      - `importantPrefixes`: (optional, default: [ "$" ]) Prefixes of keywords that should be generated first
+
+      Example:
+      ```nix
+        toHyprconf {
+          attrs = {
+            general = {
+              border_size = 2;
+              "col.active_border" = "rgba(FF0000EE)";
+            };
+
+            bind = [
+              "$mod, H, movefocus, l"
+              "$mod, J, movefocus, d"
+              "$mod, K, movefocus, u"
+              "$mod, L, movefocus, r"
+            ];
+
+            "$mod" = "SUPER";
+          };
+        }
+      ```
+
+      will generate the following hypr conf
+
+      ```
+      $mod = SUPER
+
+      general {
+        border_size = 2
+        col.active_border = rgba(FF0000EE)
+      }
+
+      bind = $mod, H, movefocus, l
+      bind = $mod, J, movefocus, d
+      bind = $mod, K, movefocus, u
+      bind = $mod, L, movefocus, r
+      ```
+
+      from: [home-manager/modules/lib/generators.nix](https://github.com/nix-community/home-manager/blob/8a423e444b17dde406097328604a64fc7429e34e/modules/lib/generators.nix)
+  */
+  toHyprconf =
+    {
+      attrs,
+      indentLevel ? 0,
+      importantPrefixes ? [ "$" ],
+    }:
+    let
+      inherit (lib)
+        all
+        concatMapStringsSep
+        concatStrings
+        concatStringsSep
+        filterAttrs
+        foldl
+        generators
+        hasPrefix
+        isAttrs
+        isList
+        mapAttrsToList
+        replicate
+        attrNames
+        ;
+
+      initialIndent = concatStrings (replicate indentLevel "  ");
+
+      toHyprconf' =
+        indent: attrs:
+        let
+          isImportantField =
+            n: _: foldl (acc: prev: if hasPrefix prev n then true else acc) false importantPrefixes;
+          importantFields = filterAttrs isImportantField attrs;
+          withoutImportantFields = fields: removeAttrs fields (attrNames importantFields);
+
+          allSections = filterAttrs (_n: v: isAttrs v || isList v) attrs;
+          sections = withoutImportantFields allSections;
+
+          mkSection =
+            n: attrs:
+            if isList attrs then
+              let
+                separator = if all isAttrs attrs then "\n" else "";
+              in
+              (concatMapStringsSep separator (a: mkSection n a) attrs)
+            else if isAttrs attrs then
+              ''
+                ${indent}${n} {
+                ${toHyprconf' "  ${indent}" attrs}${indent}}
+              ''
+            else
+              toHyprconf' indent { ${n} = attrs; };
+
+          mkFields = generators.toKeyValue {
+            listsAsDuplicateKeys = true;
+            inherit indent;
+          };
+
+          allFields = filterAttrs (_n: v: !(isAttrs v || isList v)) attrs;
+          fields = withoutImportantFields allFields;
+        in
+        mkFields importantFields
+        + concatStringsSep "\n" (mapAttrsToList mkSection sections)
+        + mkFields fields;
+    in
+    toHyprconf' initialIndent attrs;
 }
