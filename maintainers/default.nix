@@ -1,5 +1,4 @@
-{ lib }:
-{
+{ lib }: {
   inherit (lib.maintainers) birdee ameer;
   patwid = {
     name = "Patrick Widmer";
@@ -126,5 +125,10 @@
     github = "LodWKobku";
     githubId = 101132529;
     name = "LodWKobku";
+  };
+  jonas-elhs = {
+    name = "Jonas Elhs";
+    github = "jonas-elhs";
+    githubId = 177471339;
   };
 }
