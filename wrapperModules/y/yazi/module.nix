@@ -434,6 +434,20 @@ in
       };
     };
   };
+  options.initLua = lib.mkOption {
+    default = null;
+    description = ''
+      Content of the init.lua file.
+    '';
+    type = lib.types.nullOr (lib.types.either lib.types.path lib.types.lines);
+    example = lib.literalMD ''
+      ```lua
+      require("session"):setup {
+        sync_yanked = true,
+      }
+      ```
+    '';
+  };
   options.generatedConfig.output = lib.mkOption {
     type = lib.types.str;
     default = config.outputName;
@@ -502,7 +516,7 @@ in
   }/${config.binName}-config";
   # using constructFiles instead of (pkgs.formats.toml {}).generate allows placeholders to refer to the final wrapper derivation in the options.
   config.constructFiles =
-    builtins.mapAttrs
+    (builtins.mapAttrs
       (n: v: {
         # generate the directory of toml files
         # use lib.mkOverride 0 to force the value to make sure they stay together
@@ -520,6 +534,14 @@ in
         theme = config.settings.theme;
         vfs = config.settings.vfs;
         package = config.settings.package;
+      }
+    )
+    // {
+      initlua = lib.mkIf (config.initLua != null) {
+        relPath = "${config.binName}-config/init.lua";
+        content =
+          if builtins.isPath config.initLua then builtins.readFile config.initLua else config.initLua;
       };
+    };
   config.meta.maintainers = [ wlib.maintainers.apetrovic6 ];
 }
