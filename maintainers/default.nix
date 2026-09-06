@@ -121,4 +121,9 @@
     github = "aliaslion";
     githubId = 122117018;
   };
+  nuclear-squid = {
+    name = "Nuclear-Squid";
+    github = "Nuclear-Squid";
+    githubId = 70967142;
+  };
 }
