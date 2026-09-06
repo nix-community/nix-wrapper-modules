@@ -103,27 +103,44 @@ If you make one, you are encouraged to submit it here for others to use if you w
 
 For more information on how to do this, check out the [getting started](https://birdeehub.github.io/nix-wrapper-modules/md/getting-started.html) documentation, and the descriptions of the module options you have at your disposal!
 
-## Long-term Goals
+## What programs can I configure in this way?
 
-It is the ideal of this project to become a hub for everyone to contribute,
-so that we can all enjoy our portable configurations with as little individual strife as possible.
+Not every program cooperates well with being wrapped, but a large portion of them do.
 
-In service of that ideal, the plan is that ownership will be transferred to nix-community,
-so that there is community ownership of where our contributions will be maintained.
+The criteria for a program to be a cooperative candidate for a wrapper derivation are as follows:
 
-Once the dust has settled, the process will be started to move it to nix-community,
-and we will start building a core team to maintain the repository long into the future!
+- The program should give you a way to tell it where all the pieces of its configuration are. Preferably _only_ its own configuration and not all of `XDG_CONFIG_HOME`.
+  - Ideally this includes plugins, which should have a runtime path mechanism of some kind to allow side by side installation from both nix AND at runtime.
+- It should not unavoidably write to those files or directories specified in that manner at runtime.
 
-In terms of features and fixes besides new prebuilt wrapper modules, we would like to see:
+If the program fulfills those 2 conditions, you will be able to wrap that program with no unsolved issues!
+
+It is generally good practice for programs to follow these rules.
+Runtime-generated information is supposed to live in `XDG_CACHE_HOME`, `XDG_DATA_HOME`, and `XDG_STATE_HOME` rather than in user configuration.
+Writing to configuration files at runtime makes versioning those files difficult, and users generally expect to be able to move their configuration to a location of their choosing for easier provisioning and organization.
+
+Unfortunately there are also many programs which do not follow these rules.
+You might be able to wrap them still, but you will run into more issues.
+
+Hopefully future helper modules utilizing technologies like `bubblewrap` can help with programs that give no way to specify configuration location.
+
+Criteria number 2 is because the file/directory is in the nix store and thus not writable.
+This is circumventable only by copying files out of the nix store at runtime, and is often an issue for NixOS and Home-Manager as well.
+
+## Roadmap
+
+Desired core library additions:
 
 - Per-module documentation generation options or functions usable by the end user for their own modules in their configuration.
 - A `bubblewrap` helper module which can help wrap difficult packages. Maybe also a `sandbox-exec` version for mac users.
 - Mac-only fixes for issues such as re-wrapping things in a binary wrapper for derivation locations that on macos require binaries.
 - DBus and udev service file options similar to the ones for systemd.
 
-## Short-term Goals
+We also accept prebuilt wrapper modules for common programs!
 
-Help us add more modules! Contributors are what makes projects like these which contain modules for so many programs amazing!
+This allows people to quickly jump in with using this project for those programs without needing to research the program's configuration mechanisms thoroughly enough to make a wrapper themselves.
+
+Contributors are what makes projects like these which contain modules for so many programs amazing! Thank you for your hard work!
 
 ## Related Extension Projects:
 
