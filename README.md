@@ -1,4 +1,4 @@
-# [nix-wrapper-modules](https://birdeehub.github.io/nix-wrapper-modules/)
+# [nix-wrapper-modules](https://nix-community.github.io/nix-wrapper-modules/)
 
 A Nix library to create wrapped executables via the module system.
 
@@ -85,7 +85,7 @@ inputs.nix-wrapper-modules.wrappers.alacritty.wrap {
 
 The above snippet does everything the prior 2 examples did, and then some!
 
-That's a full module (defined like [this](https://github.com/BirdeeHub/nix-wrapper-modules/blob/main/wrapperModules/a/alacritty/module.nix) and with docs [here](https://birdeehub.github.io/nix-wrapper-modules/wrapperModules/alacritty.html)) but just for that package, and the result is a fully portable derivation, just like the wrapper scripts above!
+That's a full module (defined like [this](https://github.com/nix-community/nix-wrapper-modules/blob/main/wrapperModules/a/alacritty/module.nix) and with docs [here](https://nix-community.github.io/nix-wrapper-modules/wrapperModules/alacritty.html)) but just for that package, and the result is a fully portable derivation, just like the wrapper scripts above!
 
 And you can call `.wrap` on it as many times as you want! You can define your own options
 to easily toggle things for your different use cases and re-export it in a flake and change them on import, etc.
@@ -101,7 +101,7 @@ There are included modules for several programs already, but there are rich and 
 
 If you make one, you are encouraged to submit it here for others to use if you wish!
 
-For more information on how to do this, check out the [getting started](https://birdeehub.github.io/nix-wrapper-modules/md/getting-started.html) documentation, and the descriptions of the module options you have at your disposal!
+For more information on how to do this, check out the [getting started](https://nix-community.github.io/nix-wrapper-modules/md/getting-started.html) documentation, and the descriptions of the module options you have at your disposal!
 
 ## What programs can I configure in this way?
 
@@ -197,7 +197,7 @@ This allows you to easily modify your module with extra files and scripts or wha
 
 Maybe you want your `tmux` wrapper to also output a launcher script that rejoins a session, or creates one? You can do that using this project with, for example, a `drv.postBuild` hook! Just like in a derivation, and you can even use `"${placeholder "out"}"` in it!
 
-But you can supply it [from within the module system](https://birdeehub.github.io/nix-wrapper-modules/lib/core.html#drv)! You could then define an option to customize its behavior later!
+But you can supply it [from within the module system](https://nix-community.github.io/nix-wrapper-modules/lib/core.html#drv)! You could then define an option to customize its behavior later!
 
 In addition, the way it is implemented allows for the creation of helper modules that wrap derivations in all sorts of ways, which you could import instead of `wlib.modules.default` if you wanted. We could have similar modules for wrapping projects via bubblewrap or into docker containers with the same ease with which this library orchestrates regular wrapper scripts.
 

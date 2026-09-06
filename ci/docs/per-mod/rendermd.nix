@@ -43,7 +43,7 @@
       linkDest =
         v:
         if lib.hasPrefix wlib.modulesPath v then
-          "https://github.com/BirdeeHub/nix-wrapper-modules/blob/main"
+          "https://github.com/nix-community/nix-wrapper-modules/blob/main"
           + lib.removePrefix wlib.modulesPath (removeViaOption (toString v))
         else
           toString v;

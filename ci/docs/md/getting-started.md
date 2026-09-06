@@ -19,7 +19,7 @@ For that it offers:
 
 ## Usage
 
-Note: there are also template(s) you can access via `nix flake init -t github:Birdeehub/nix-wrapper-modules`
+Note: there are also template(s) you can access via `nix flake init -t github:nix-community/nix-wrapper-modules`
 
 They will get you started with a module file and the default one also gives you a flake which imports it, for quickly testing it out!
 
@@ -30,7 +30,7 @@ They will get you started with a module file and the default one also gives you 
   description = ''
     A flake providing a wrapped `wezterm` package with an extra keybind!
   '';
-  inputs.wrappers.url = "github:BirdeeHub/nix-wrapper-modules";
+  inputs.wrappers.url = "github:nix-community/nix-wrapper-modules";
   outputs = { self, wrappers }: {
     # These things work without flakes too,
     # but this gives an example from start to finish!
@@ -57,7 +57,7 @@ They will get you started with a module file and the default one also gives you 
   description = ''
     A flake providing a wrapped `mpv` package with some configuration
   '';
-  inputs.wrappers.url = "github:BirdeeHub/nix-wrapper-modules";
+  inputs.wrappers.url = "github:nix-community/nix-wrapper-modules";
   inputs.wrappers.inputs.nixpkgs.follows = "nixpkgs";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   outputs = { self, nixpkgs, wrappers }: let
@@ -266,7 +266,7 @@ See the [`wlib.getInstallModule`](../lib/wlib.html#function-library-wlib.getInst
 
 This repository also offers a [`flake-parts`](https://github.com/hercules-ci/flake-parts) module!
 
-It offers a template! `nix flake init -t github:BirdeeHub/nix-wrapper-modules#flake-parts`
+It offers a template! `nix flake init -t github:nix-community/nix-wrapper-modules#flake-parts`
 
 ```nix
 {
@@ -275,7 +275,7 @@ It offers a template! `nix flake init -t github:BirdeeHub/nix-wrapper-modules#fl
 
     `wrappers`, `wrapperModules` and `packages.*.*`
   '';
-  inputs.wrappers.url = "github:BirdeeHub/nix-wrapper-modules";
+  inputs.wrappers.url = "github:nix-community/nix-wrapper-modules";
   inputs.wrappers.inputs.nixpkgs.follows = "nixpkgs";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";

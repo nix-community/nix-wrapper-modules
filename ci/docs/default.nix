@@ -160,7 +160,7 @@ in
         description = "Make wrapper derivations with the module system! Use the existing modules, or write your own!";
       };
       output.html = {
-        git-repository-url = "https://github.com/BirdeeHub/nix-wrapper-modules";
+        git-repository-url = "https://github.com/nix-community/nix-wrapper-modules";
         additional-css = [ "custom.css" ];
         additional-js = [ "sidebar_fold.js" ];
       };
@@ -177,7 +177,7 @@ in
         src = "${placeholder "out"}/wrappers-lib/intro.md";
         build = ''
           mkdir -p $out/wrappers-lib
-          sed 's|# \[nix-wrapper-modules\](https://birdeehub.github.io/nix-wrapper-modules/)|# [nix-wrapper-modules](https://github.com/BirdeeHub/nix-wrapper-modules)|' < '${../../README.md}' > "$out/wrappers-lib/intro.md"
+          sed 's|# \[nix-wrapper-modules\](https://nix-community.github.io/nix-wrapper-modules/)|# [nix-wrapper-modules](https://github.com/nix-community/nix-wrapper-modules)|' < '${../../README.md}' > "$out/wrappers-lib/intro.md"
         '';
       }
       {
