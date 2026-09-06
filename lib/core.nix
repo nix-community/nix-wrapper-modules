@@ -942,7 +942,7 @@ in
             "outputs"
             "meta"
           ];
-          errormsg = "config.builderFunction function must return (a string) or (a function that receives attrset and returns an attrset) or (a functor as described in https://birdeehub.github.io/nix-wrapper-modules/core.html#builderfunction)";
+          errormsg = "config.builderFunction function must return (a string) or (a function that receives attrset and returns an attrset) or (a functor as described in https://nix-community.github.io/nix-wrapper-modules/core.html#builderfunction)";
           defaultPhases = [
             "unpackPhase"
             "patchPhase"
