@@ -65,11 +65,29 @@ This is done at the start of `early-init.el`.";
     output = lib.mkOverride 0 config.generatedConfigOutput;
     relPath = lib.mkOverride 0 "emacs.d/early-init.el";
     content =
-      lib.optionalString (config.userDirectory != null) ''
-        (setq user-emacs-directory "${config.userDirectory}")
-        (setq package-user-dir (expand-file-name "elpa/" user-emacs-directory))
-      ''
-      + config.earlyConfigFile;
+      let
+        # Preserve a lexical binding cookie at the top of the early config file
+        insertGeneratedPrelude =
+          text: prelude:
+          let
+            lines = lib.splitString "\n" text;
+            first = builtins.head lines;
+            rest = lib.concatStringsSep "\n" (builtins.tail lines);
+          in
+          if builtins.match "[ \t]*;.*" first != null then first + "\n" + prelude + rest else prelude + text;
+        userDirectoryElisp = ''
+          (setq user-emacs-directory "${config.userDirectory}")
+          (setq package-user-dir (expand-file-name "elpa/" user-emacs-directory))
+        '';
+      in
+      if config.userDirectory == null then
+        config.earlyConfigFile
+      else if config.earlyConfigFile == "" then
+        # if earlyConfigFile is empty generate a lexical binding cookie to silence the warning on emacs 31+
+        ";;; early-init.el --- Generated initialization file -*- lexical-binding: t; -*-\n"
+        + userDirectoryElisp
+      else
+        insertGeneratedPrelude config.earlyConfigFile userDirectoryElisp;
   };
   config.constructFiles.init = {
     relPath = lib.mkOverride 0 "emacs.d/init.el";
