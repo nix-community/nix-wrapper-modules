@@ -25,6 +25,7 @@ let
           matches = [ { app-id = ".*"; } ];
           excludes = [
             { app-id = "org.keepassxc.KeePassXC"; }
+            { app-id = _: { custom = ''r#"^org\.telegram\.desktop$"#''; }; }
           ];
           open-focused = false;
           open-floating = false;

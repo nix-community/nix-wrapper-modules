@@ -37,19 +37,5 @@
         default = import ./shell.nix { pkgs = getPkgs system; };
       });
       formatter = forAllSystems (system: (getPkgs system).nixfmt-tree);
-      wrappedModules = lib.mapAttrs (
-        _:
-        lib.warn ''
-          Attention: `inputs.nix-wrapper-modules.wrappedModules` is deprecated, use `inputs.nix-wrapper-modules.wrappers` instead
-
-          Apologies for any inconvenience this has caused, but they are only the config set of a module, not a module themselves.
-
-          In addition, it was very hard to tell the name apart from its actual module counterpart, and it was longer than convenient.
-
-          This will be the last time these output names are changing, as a flake-parts module has been added for users to import.
-
-          This output will be removed on August 31, 2026
-        ''
-      ) self.wrappers;
     };
 }

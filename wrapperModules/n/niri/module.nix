@@ -6,47 +6,6 @@
   ...
 }:
 let
-  # deprecates `{ _attrs = ??; ... }` and `null` to `_: { props = ??; content = ...; }` and `_: {}` respectively
-  # remove on June 1, 2026
-  convertAndWarn =
-    let
-      endOfWarningMessage = "\n" + ''
-        Warning will be removed on June 1, 2026,
-        but you can remove this deprecation layer ahead of time
-        after fixing your configuration by setting `v2-settings = true`.
-      '';
-      recurse =
-        path: v:
-        if builtins.isAttrs v then
-          let
-            hasAttrs = v ? _attrs;
-            rest = lib.removeAttrs v [ "_attrs" ];
-            processedRest = lib.mapAttrs (n: val: recurse (path ++ [ n ]) val) rest;
-          in
-          if hasAttrs then
-            lib.warn
-              (
-                "wrapperModules.niri: Deprecated `{ _attrs = ??; ... }` at ${lib.concatStringsSep "." path}. Use `_: { props = ??; content = ...; }` instead."
-                + endOfWarningMessage
-              )
-              (_: {
-                props = recurse (path ++ [ "_attrs" ]) v._attrs;
-                content = processedRest;
-              })
-          else
-            processedRest
-        else if builtins.isList v && builtins.all builtins.isAttrs v then
-          map (i: recurse (path ++ [ "[${toString i}]" ]) i) v
-        else if v == null then
-          lib.warn (
-            "wrapperModules.niri: Deprecated `null` at ${lib.concatStringsSep "." path}. Use `_: {}` instead."
-            + endOfWarningMessage
-          ) (_: { })
-        else
-          v;
-    in
-    if config.v2-settings then v: v else v: recurse [ ] v;
-
   mkRule =
     # "window-rules" "layer-rules"
     node: r:
@@ -102,38 +61,12 @@ let
     );
 in
 {
-  imports = [ wlib.modules.default ];
+  imports = [
+    wlib.modules.default
+    wlib.modules.systemd
+  ];
 
   options = {
-    v2-settings = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = ''
-        If you have converted your configuration from the old version of the niri module's kdl translation to the new one already,
-        you may set this to true to stop it from checking for the old version.
-
-        On July 1, 2026, when that version is removed, this option will warn that it no longer has any effect.
-
-        The change was as follows:
-
-        For doing
-
-        ```kdl
-        node "some" "args" "y"=100 {
-        }
-        ```
-
-        `{ _attrs = ??; ... }` was changed to `_: { props = ??; content = ...; }`
-
-        And in the context of declaring a node which is just a name with no children or props:
-
-        `null` was changed to `_: {}` because `null` is an actual value you may want to provide.
-
-        Functions were the only type of value we could not translate.
-
-        The argument to the function is provided by calling the function with `lib.fix`.
-      '';
-    };
     settings = lib.mkOption {
       description = ''
         Niri configuration settings.
@@ -150,7 +83,6 @@ in
             default = { };
             type = wlib.types.attrsRecursive;
             description = "Bindings of niri";
-            apply = convertAndWarn;
             example = lib.literalMD ''
               ```nix
               binds = {
@@ -170,7 +102,6 @@ in
             default = { };
             type = wlib.types.attrsRecursive;
             description = "Layout definitions";
-            apply = convertAndWarn;
             example = lib.literalMD ''
               ```nix
               layout = {
@@ -218,12 +149,12 @@ in
             default = [ ];
             type = lib.types.listOf lib.types.attrs;
             description = "List of window rules";
-            apply = convertAndWarn;
             example = [
               {
                 matches = [ { app-id = ".*"; } ];
                 excludes = [
                   { app-id = "org.keepassxc.KeePassXC"; }
+                  { app-id = _: { custom = ''r#"^org\.telegram\.desktop$"#''; }; }
                 ];
                 open-focused = false;
                 open-floating = false;
@@ -234,7 +165,6 @@ in
             default = [ ];
             type = lib.types.listOf lib.types.attrs;
             description = "List of layer rules";
-            apply = convertAndWarn;
             example = [
               {
                 matches = [ { namespace = "^notifications$"; } ];
@@ -247,7 +177,6 @@ in
             default = { };
             type = lib.types.attrsOf (lib.types.nullOr lib.types.anything);
             description = "Named workspace definitions";
-            apply = convertAndWarn;
             example = lib.literalMD ''
               ```nix
               workspaces = {
@@ -263,7 +192,6 @@ in
             default = { };
             type = wlib.types.attrsRecursive;
             description = "Output configuration";
-            apply = convertAndWarn;
             example = lib.literalMD ''
               ```nix
               {
@@ -375,6 +303,7 @@ in
   };
   config.filesToPatch = [
     "share/applications/*.desktop"
+    "lib/systemd/user/niri.service"
     "share/systemd/user/niri.service"
   ];
   # NOTE: gives users a nice error message about invalid configs, with actual knowledge of niri's config format
@@ -401,17 +330,15 @@ in
             (attrAsArg "workspace" config.settings.workspaces)
             (attrAsArg "output" config.settings.outputs)
             [
-              (convertAndWarn (
-                lib.removeAttrs config.settings [
-                  "window-rules"
-                  "layer-rules"
-                  "spawn-at-startup"
-                  "spawn-sh-at-startup"
-                  "workspaces"
-                  "outputs"
-                  "extraConfig"
-                ]
-              ))
+              (lib.removeAttrs config.settings [
+                "window-rules"
+                "layer-rules"
+                "spawn-at-startup"
+                "spawn-sh-at-startup"
+                "workspaces"
+                "outputs"
+                "extraConfig"
+              ])
             ]
             config.extraSettings
           ];
@@ -419,21 +346,13 @@ in
         + "\n"
         + config.settings.extraConfig;
   };
-  config.buildCommand.niriReloadConfig =
-    lib.mkIf (!config.disableConfigHotReload && lib.versionAtLeast config.package.version "26.04")
-      {
-        after = [ "symlinkScript" ];
-        data = ''
-          chmod +w ${placeholder config.outputName}/share/systemd/user/niri.service
-          cat >> ${placeholder config.outputName}/share/systemd/user/niri.service<<EOF
-          [Unit]
-          X-Reload-Triggers=${config.constructFiles.generatedConfig.path}
-          [Service]
-          ExecReload=${lib.getExe config.package} msg action load-config-file --path ${config.constructFiles.generatedConfig.path}
-          X-ReloadIfChanged=true
-          EOF
-        '';
-      };
+  config.systemd.user.service.niri = lib.mkIf (!config.disableConfigHotReload) {
+    Unit.X-Reload-Triggers = [ "${config.constructFiles.generatedConfig.path}" ];
+    Service = {
+      ExecReload = "${lib.getExe config.package} msg action load-config-file --path ${config.constructFiles.generatedConfig.path}";
+      X-ReloadIfChanged = true;
+    };
+  };
   config.meta.maintainers = [
     wlib.maintainers.patwid
   ];

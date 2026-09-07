@@ -9,7 +9,7 @@
   imports = [ wlib.modules.default ];
   options = {
     settings = lib.mkOption {
-      inherit (pkgs.formats.gitIni { }) type;
+      inherit (pkgs.formats.gitIni { listsAsDuplicateKeys = true; }) type;
       default = { };
       description = ''
         Git configuration settings.

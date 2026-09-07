@@ -25,7 +25,7 @@ in
               description = ''
                 Submodule option for configuring and exporting wrapper modules!
 
-                https://github.com/BirdeeHub/nix-wrapper-modules
+                https://github.com/nix-community/nix-wrapper-modules
               '';
             };
             options.wrapperModules = mkOption {
@@ -36,7 +36,7 @@ in
 
                 Read only. Modify `flake.wrappers` instead, this will reflect that option.
 
-                https://github.com/BirdeeHub/nix-wrapper-modules
+                https://github.com/nix-community/nix-wrapper-modules
               '';
             };
             config.wrapperModules = (types.lazyAttrsOf types.deferredModule).merge options.wrappers.loc options.wrappers.definitionsWithLocations;

@@ -184,6 +184,7 @@ of the wrapper (if any) and ensure that the tests are only run on the required p
 let
   inherit (tlib)
     fileContains
+    notFileContains
     isDirectory
     isFile
     notIsFile
@@ -202,7 +203,7 @@ test { wrapper = "direnv"; } { # <-- Specify the name of the wrapper here (*)
     in
     [
       "[[ -d ${wrapper} ]]" # <-- a simple condition to be asserted
-      {                     
+      {
         cond = "[[ -d ${wrapper} ]]";
         msg = "No directory found for wrapper."; # <-- you can also specify a custom error message
       }
@@ -214,7 +215,7 @@ test { wrapper = "direnv"; } { # <-- Specify the name of the wrapper here (*)
       wrapper = self.wrappers.direnv.wrap {
         inherit pkgs;
       };
-    in 
+    in
     '' # <-- no need to provide a list if there is only one assertion
       "${wrapper}/bin/direnv" --version |
       grep -q "${wrapper.version}"
@@ -253,6 +254,7 @@ except you don't provide a wrapper but a name:
 let
   inherit (tlib)
     fileContains
+    notFileContains
     isDirectory
     isFile
     notIsFile
@@ -292,4 +294,4 @@ Why specify this? I was having trouble figuring out what to title my commits. So
 
 ## Questions?
 
-The [github discussions board](https://github.com/BirdeeHub/nix-wrapper-modules/discussions) is open and a great place to find help!
+The [github discussions board](https://github.com/nix-community/nix-wrapper-modules/discussions) is open and a great place to find help!

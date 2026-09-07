@@ -61,6 +61,17 @@ let
       };
     }
     {
+      description = "function with props custom content";
+      expected = ''"h" "k"=r#"v"#'';
+      actual = toKdl {
+        h = _: {
+          props = {
+            k = _: { custom = ''r#"v"#''; };
+          };
+        };
+      };
+    }
+    {
       description = "function with content only";
       expected = "\"i\"  {\n  \"j\" 1\n}";
       actual = toKdl {
@@ -73,12 +84,13 @@ let
     }
     {
       description = "function with props and content";
-      expected = "\"f\" \"arg1\" \"key\"=\"val\" {\n  \"g\" \n}";
+      expected = "\"f\" \"arg1\" \"key1\"=\"val\" \"key2\"=r#\"val\"# {\n  \"g\" \n}";
       actual = toKdl {
         f = _: {
           props = [
             "arg1"
-            { key = "val"; }
+            { key1 = "val"; }
+            { key2 = _: { custom = ''r#"val"#''; }; }
           ];
           content = {
             g = _: { };

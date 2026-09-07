@@ -168,7 +168,7 @@ finalDrv
     ) outputs}
 
   ''
-  + lib.optionalString stdenv.isLinux (
+  + lib.optionalString stdenv.hostPlatform.isLinux (
     patchDesktop "nvim" binName + patchDesktop "org.neovim.nvim" "org.neovim.${binName}"
   );
 }

@@ -31,6 +31,12 @@
       relPath = "${config.binName}-config.toml";
       builder = ''${pkgs.remarshal}/bin/json2toml "$1" "$2"'';
     };
+    # Update itself in completion files so it can autocomplete aliases declared in config
+    filesToPatch = [
+      "share/bash-completion/completions/jj.bash"
+      "share/fish/vendor_completions.d/jj.fish"
+      "share/zsh/site-functions/_jj"
+    ];
 
     meta.maintainers = [ wlib.maintainers.birdee ];
   };

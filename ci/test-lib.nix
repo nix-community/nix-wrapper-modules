@@ -320,6 +320,28 @@ in
   };
 
   /**
+    Returns an `Assertion` that checks whether `file` does not contain a line matching `pattern`.
+
+    The check is performed with `! grep -Eq`, so `pattern` is treated as an extended regular expression.
+
+    # Type
+    ```
+    notFileContains :: String -> String -> Assertion
+    ```
+
+    # Arguments
+    file
+    : Path to the file to search.
+
+    pattern
+    : Extended regular expression to search for.
+  */
+  notFileContains = file: pattern: {
+    cond = ''! grep -Eq -- '${pattern}' "${file}"'';
+    msg = "Pattern '${pattern}' found in ${file}";
+  };
+
+  /**
     Returns an `Assertion` that checks whether `expected` and `actual` are equal.
 
     The comparison is performed in Nix at evaluation time. If the values differ,

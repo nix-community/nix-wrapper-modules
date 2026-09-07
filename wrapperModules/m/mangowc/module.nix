@@ -6,7 +6,10 @@
   ...
 }:
 {
-  imports = [ wlib.modules.default ];
+  imports = [
+    wlib.modules.default
+    wlib.modules.systemd
+  ];
 
   options =
     let
@@ -188,10 +191,23 @@
         '';
       };
 
-      extraContent = mkOption {
-        type = types.lines;
-        default = "";
-        internal = true;
+      hotReload.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          When `true`, the wrapper will generate mango-reload service which will reload mango with the new config on rebuild.
+
+          Note: You have to start the mango-reload.service yourself.
+          For Example:
+          ```
+            systemd.packages = [ config.wrappers.mango.wrapper ];
+            wrappers.mango.settings.exec-once = [
+              "systemctl --user start mango-reload.service"
+            ];
+          ```
+
+          Mango 0.15 is required for this functionality.
+        '';
       };
     };
 
@@ -222,19 +238,12 @@
             sourcedFileToSourceExpression =
               sourcedFile:
               if isImpurePath sourcedFile then "source-optional=${sourcedFile}" else "source=${sourcedFile}";
-            extraConfig =
-              if config.extraContent or "" != "" then
-                lib.warn "wrapperModules.mangowc: config.extraContent is deprecated, please use config.extraConfig instead" (
-                  config.extraContent
-                )
-              else
-                config.extraConfig;
           in
           (lib.strings.concatMapStringsSep "\n" sourcedFileToSourceExpression config.sourcedFiles)
           + "\n"
           + settingsString
           + "\n"
-          + extraConfig
+          + config.extraConfig
           + "\n"
           + lib.optionalString (
             config.autostart_sh != ""
@@ -249,8 +258,19 @@
       '';
     };
 
+    systemd.user.service.mangoReloadConfig = lib.mkIf config.hotReload.enable {
+      Service = {
+        Type = "oneshot";
+        RemainAfterExit = "yes";
+        ExecStart = "${lib.getExe' pkgs.coreutils "true"}";
+        ExecReload = "${lib.getExe' config.package "mmsg"} dispatch load_config_file,${config.constructFiles.generatedConfig.path}";
+        X-ReloadIfChanged = true;
+      };
+      Unit.X-Reload-Triggers = [ config.constructFiles.generatedConfig.path ];
+    };
+
     flags."-c" = config.configFile.path;
-    package = lib.mkDefault pkgs.mangowc;
+    package = lib.mkDefault (pkgs.mangowc or pkgs.mango);
     passthru.providedSessions = config.package.passthru.providedSessions;
 
     meta.platforms = lib.platforms.linux;

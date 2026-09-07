@@ -169,44 +169,72 @@ let
   hidden = groupByDecl invisible.wrong;
   visible = groupByDecl partitioned.wrong;
 
+  collectAssociatedOptions =
+    visiblity: groupedOptions:
+    {
+      unassociated ? { },
+      modules-by-meta,
+    }:
+    let
+      isAssociated = file: module: builtins.any (n: lib.hasInfix n file) (module.associated or [ ]);
+      associations = builtins.mapAttrs (
+        file: _: lib.lists.findFirstIndex (isAssociated file) null modules-by-meta
+      ) groupedOptions;
+    in
+    {
+      modules-by-meta = lib.imap0 (
+        i: module:
+        let
+          opts =
+            module.${visiblity} or [ ]
+            ++ builtins.concatLists (
+              lib.mapAttrsToList (file: index: if index == i then groupedOptions.${file} else [ ]) associations
+            );
+        in
+        module
+        // {
+          ${if opts != [ ] then visiblity else null} = opts;
+        }
+      ) modules-by-meta;
+      unassociated = unassociated // {
+        ${visiblity} =
+          unassociated.${visiblity} or [ ]
+          ++ builtins.concatLists (
+            lib.mapAttrsToList (file: index: if index == null then groupedOptions.${file} else [ ]) associations
+          );
+      };
+    };
+
 in
-lib.pipe modules-by-meta [
-  (builtins.concatMap (
-    v:
-    lib.optional (internal ? "${v.file}" || hidden ? "${v.file}" || visible ? "${v.file}") (
-      v
-      // {
-        ${if internal ? "${v.file}" then "internal" else null} =
-          internal.${v.file} ++ lib.optional (v.file == anon_name) (internal.${anon_name} or [ ]);
-        ${if hidden ? "${v.file}" then "hidden" else null} =
-          hidden.${v.file} ++ lib.optional (v.file == anon_name) (hidden.${anon_name} or [ ]);
-        ${if visible ? "${v.file}" then "visible" else null} =
-          visible.${v.file} ++ lib.optional (v.file == anon_name) (visible.${anon_name} or [ ]);
-      }
-    )
-  ))
+lib.pipe { inherit modules-by-meta; } [
+  (collectAssociatedOptions "visible" visible)
+  (collectAssociatedOptions "hidden" hidden)
+  (collectAssociatedOptions "internal" internal)
+  (
+    { unassociated, modules-by-meta }:
+    let
+      modules-filtered = builtins.filter (
+        v: v.visible or [ ] != [ ] || v.hidden or [ ] != [ ] || v.internal or [ ] != [ ]
+      ) modules-by-meta;
+      anon_module = {
+        file = anon_name;
+        ${if unassociated.visible or [ ] != [ ] then "visible" else null} = unassociated.visible or [ ];
+        ${if unassociated.hidden or [ ] != [ ] then "hidden" else null} = unassociated.hidden or [ ];
+        ${if unassociated.internal or [ ] != [ ] then "internal" else null} = unassociated.internal or [ ];
+      };
+    in
+    lib.reverseList modules-filtered
+    ++ lib.optional (
+      anon_module.visible or [ ] != [ ]
+      || anon_module.hidden or [ ] != [ ]
+      || anon_module.internal or [ ] != [ ]
+    ) anon_module
+  )
   (
     normed:
     if builtins.isBool includeCore && includeCore == true then
       normed
     else
       builtins.filter (v: v.file != wlib.core) normed
-  )
-  (
-    v:
-    lib.reverseList v
-    ++
-      lib.optional
-        (
-          builtins.all (v: v.file != anon_name) v && internal ? "${anon_name}"
-          || hidden ? "${anon_name}"
-          || visible ? "${anon_name}"
-        )
-        {
-          file = anon_name;
-          ${if internal ? "${anon_name}" then "internal" else null} = internal.${anon_name};
-          ${if hidden ? "${anon_name}" then "hidden" else null} = hidden.${anon_name};
-          ${if visible ? "${anon_name}" then "visible" else null} = visible.${anon_name};
-        }
   )
 ]

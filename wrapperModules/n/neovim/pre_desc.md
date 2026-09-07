@@ -1,6 +1,6 @@
 Please see the template for an introductory example usage!
 
-To initialize it, run [`nix flake init -t github:BirdeeHub/nix-wrapper-modules#neovim`](https://github.com/BirdeeHub/nix-wrapper-modules/tree/main/templates/neovim)
+To initialize it, run [`nix flake init -t github:nix-community/nix-wrapper-modules#neovim`](https://github.com/nix-community/nix-wrapper-modules/tree/main/templates/neovim)
 
 If you are using `zsh`, you may need to escape the `#` character with a backslash.
 
@@ -59,5 +59,3 @@ A basic usage of this module might look something like this:
 ```
 
 Please also check out the [Tips and Tricks](#tips-and-tricks) section for more information!
-
-## Options:

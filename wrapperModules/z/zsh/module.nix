@@ -60,7 +60,7 @@ in
 
       ```nix
       { config, ... }: {
-        imports = [ (wlib.installModule { name = "zsh"; value = ./yourzshwrappermodule.nix; }) ];
+        imports = [ (wlib.getInstallModule { name = "zsh"; value = ./yourzshwrappermodule.nix; }) ];
         wrappers.zsh.enable = true;
         wrappers.zsh.asSystemDefault = true;
         users.users.''${username}.shell = config.wrappers.zsh.wrapper;

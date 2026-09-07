@@ -461,61 +461,23 @@ let
           Adds prefixed entries to the DAG under the name `NIX_LIB_PREFIXES`
         '';
       };
-      options.${optionalAttribute "extraPackages"} = lib.mkOption {
-        type = lib.types.listOf lib.types.package;
-        default =
-          if mainConfig != null && config.mirror or false then mainConfig.extraPackages or [ ] else [ ];
-        internal = true;
-        apply =
-          val:
-          if val != [ ] then
-            (builtins.warn ''
-              `extraPackages` is deprecated, use `runtimePkgs` instead.
-              `extraPackages` will be removed on August 31, 2026.
-            '' val)
-          else
-            val;
-      };
-      options.${optionalAttribute "runtimeLibraries"} = lib.mkOption {
-        type = lib.types.listOf lib.types.package;
-        default =
-          if mainConfig != null && config.mirror or false then mainConfig.runtimeLibraries or [ ] else [ ];
-        internal = true;
-        apply =
-          val:
-          if val != [ ] then
-            (builtins.warn ''
-              `runtimeLibraries` is deprecated, use `runtimeLibs` instead.
-              `runtimeLibraries` will be removed on August 31, 2026.
-            '' val)
-          else
-            val;
-      };
       config.${
-        if
-          excluded.runtimePkgs or false
-          && excluded.runtimeLibs or false
-          && excluded.extraPackages or false
-          && excluded.runtimeLibraries or false
-        then
-          null
-        else
-          "suffixVar"
+        if excluded.runtimePkgs or false && excluded.runtimeLibs or false then null else "suffixVar"
       } =
-        lib.optional (extraPath.post != [ ] || config.extraPackages or [ ] != [ ]) {
+        lib.optional (extraPath.post != [ ]) {
           name = "NIX_PATH_ADDITIONS";
           data = [
             "PATH"
             ":"
-            "${lib.makeBinPath (extraPath.post ++ config.extraPackages or [ ])}"
+            "${lib.makeBinPath extraPath.post}"
           ];
         }
-        ++ lib.optional (extraLibs.post != [ ] || config.runtimeLibraries or [ ] != [ ]) {
+        ++ lib.optional (extraLibs.post != [ ]) {
           name = "NIX_LIB_ADDITIONS";
           data = [
             "LD_LIBRARY_PATH"
             ":"
-            "${lib.makeLibraryPath (extraLibs.post ++ config.runtimeLibraries or [ ])}"
+            "${lib.makeLibraryPath extraLibs.post}"
           ];
         };
       config.${
@@ -758,57 +720,8 @@ let
         );
       };
     };
-  deprecationMessage =
-    name:
-    (builtins.warn or builtins.trace) ''
-      WARNING: `(import wlib.modules.makeWrapper).${name}` is deprecated
-
-      It has been moved to `wlib.makeWrapper.${name}`
-    '';
-  error_message = "this function has been moved to `wlib.makeWrapper` and also requires `pkgs` or `callPackage` to be provided to it";
 in
 {
-  wrapAll =
-    {
-      wlib,
-      config,
-      pkgs ? null,
-      callPackage ? pkgs.callPackage or (throw error_message),
-      ...
-    }@args:
-    (deprecationMessage "wrapAll") wlib.makeWrapper.wrapAll (args // { inherit config callPackage; });
-  wrapMain =
-    {
-      wlib,
-      config,
-      pkgs ? null,
-      callPackage ? pkgs.callPackage or (throw error_message),
-      ...
-    }@args:
-    (deprecationMessage "wrapMain") wlib.makeWrapper.wrapMain (args // { inherit config callPackage; });
-  wrapVariants =
-    {
-      wlib,
-      config,
-      pkgs ? null,
-      callPackage ? pkgs.callPackage or (throw error_message),
-      ...
-    }@args:
-    (deprecationMessage "wrapperVariants") wlib.makeWrapper.wrapVariants (
-      args // { inherit config callPackage; }
-    );
-  wrapVariant =
-    {
-      wlib,
-      config,
-      pkgs ? null,
-      callPackage ? pkgs.callPackage or (throw error_message),
-      ...
-    }@args:
-    (deprecationMessage "wrapVariant") wlib.makeWrapper.wrapVariant (
-      args // { inherit config callPackage; }
-    );
-
   wrapperFunction = null;
   # excluded_options.argv0 = true;  # both top & variants
   # excluded_options.top.argv0 = true;  # just top

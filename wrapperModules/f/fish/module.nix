@@ -45,7 +45,7 @@ let
             "anywhere"
             "command"
           ];
-          default = "anywhere";
+          default = "command";
           description = ''
             The scope of the abbreviation.
 
@@ -468,10 +468,9 @@ in
 
         mkAbbrStr =
           abbr:
-          (foldl' (
-            acc: elem: acc + " " + (mkAbbrArg elem abbr)
-          ) "abbr --add ${abbr.word} ${mkCursorArg abbr}" abbrArgs)
-          + optionalString (abbr.function == null) " \"${abbr.expansion}\"";
+          (foldl' (acc: elem: acc + " " + (mkAbbrArg elem abbr)) "abbr --add ${mkCursorArg abbr}" abbrArgs)
+          + " -- ${abbr.word}"
+          + optionalString (abbr.function == null) " ${lib.escapeShellArg abbr.expansion}";
 
         abbrs = concatStringsSep "\n" (map mkAbbrStr (attrValues cfg.abbreviations));
         aliases = concatStringsSep "\n" (
@@ -485,9 +484,11 @@ in
         pluginCompletions
         customPluginSources
         customPluginCompletions
+        "if status is-interactive"
         aliases
         abbrs
         completions
+        "end"
         cfg.configFile.content
       ]);
   };

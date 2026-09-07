@@ -942,7 +942,7 @@ in
             "outputs"
             "meta"
           ];
-          errormsg = "config.builderFunction function must return (a string) or (a function that receives attrset and returns an attrset) or (a functor as described in https://birdeehub.github.io/nix-wrapper-modules/core.html#builderfunction)";
+          errormsg = "config.builderFunction function must return (a string) or (a function that receives attrset and returns an attrset) or (a functor as described in https://nix-community.github.io/nix-wrapper-modules/core.html#builderfunction)";
           defaultPhases = [
             "unpackPhase"
             "patchPhase"
@@ -995,17 +995,7 @@ in
           '';
           initial = pkgs.callPackage config.builderFunction (
             args
-            // rec {
-              wrapper = lib.warn ''
-                the `wrapper` argument of config.builderFunction is deprecated.
-
-                Instead of `wrapper`, you will need to run `buildCommand` argument instead.
-
-                It contains the sorted and concatenated value of `config.buildCommand` DAG option
-
-                If you wish to sort the `config.buildCommand` DAG yourself instead, this is fine,
-                but it has been provided in sorted form via the `buildCommand` argument for convenience.
-              '' buildCommand;
+            // {
               buildCommand = lib.pipe config.buildCommand [
                 (wlib.dag.unwrapSort "buildCommand")
                 (map (v: v.data))

@@ -1,4 +1,4 @@
-# [nix-wrapper-modules](https://birdeehub.github.io/nix-wrapper-modules/)
+# [nix-wrapper-modules](https://nix-community.github.io/nix-wrapper-modules/)
 
 A Nix library to create wrapped executables via the module system.
 
@@ -85,7 +85,7 @@ inputs.nix-wrapper-modules.wrappers.alacritty.wrap {
 
 The above snippet does everything the prior 2 examples did, and then some!
 
-That's a full module (defined like [this](https://github.com/BirdeeHub/nix-wrapper-modules/blob/main/wrapperModules/a/alacritty/module.nix) and with docs [here](https://birdeehub.github.io/nix-wrapper-modules/wrapperModules/alacritty.html)) but just for that package, and the result is a fully portable derivation, just like the wrapper scripts above!
+That's a full module (defined like [this](https://github.com/nix-community/nix-wrapper-modules/blob/main/wrapperModules/a/alacritty/module.nix) and with docs [here](https://nix-community.github.io/nix-wrapper-modules/wrapperModules/alacritty.html)) but just for that package, and the result is a fully portable derivation, just like the wrapper scripts above!
 
 And you can call `.wrap` on it as many times as you want! You can define your own options
 to easily toggle things for your different use cases and re-export it in a flake and change them on import, etc.
@@ -101,30 +101,46 @@ There are included modules for several programs already, but there are rich and 
 
 If you make one, you are encouraged to submit it here for others to use if you wish!
 
-For more information on how to do this, check out the [getting started](https://birdeehub.github.io/nix-wrapper-modules/md/getting-started.html) documentation, and the descriptions of the module options you have at your disposal!
+For more information on how to do this, check out the [getting started](https://nix-community.github.io/nix-wrapper-modules/md/getting-started.html) documentation, and the descriptions of the module options you have at your disposal!
 
-## Long-term Goals
+## What programs can I configure in this way?
 
-It is the ideal of this project to become a hub for everyone to contribute,
-so that we can all enjoy our portable configurations with as little individual strife as possible.
+Not every program cooperates well with being wrapped, but a large portion of them do.
 
-In service of that ideal, the plan is that ownership will be transferred to nix-community,
-so that there is community ownership of where our contributions will be maintained.
+The criteria for a program to be a cooperative candidate for a wrapper derivation are as follows:
 
-The road-map before beginning that process consists of at least most of the following items:
+- The program should give you a way to tell it where all the pieces of its configuration are. Preferably _only_ its own configuration and not all of `XDG_CONFIG_HOME`.
+  - Ideally this includes plugins, which should have a runtime path mechanism of some kind to allow side by side installation from both nix AND at runtime.
+- It should not unavoidably write to those files or directories specified in that manner at runtime.
 
-- Better doc-generation options, less buggy and made more available to individual modules outside of the main repository.
-- Services options for generating service files which can be installed by passing the package to the correct option.
-- Non-intrusive `bubblewrap` helper module, for programs that are difficult to wrap.
-- Better documentation in general. Things should already be covered in the docs, but not yet always in a way digestible for everyone.
-- Maybe 1 or 2 other things.
+If the program fulfills those 2 conditions, you will be able to wrap that program with no unsolved issues!
 
-Once the dust has settled, the process will be started to move it to nix-community,
-and we will start building a core team to maintain the repository long into the future!
+It is generally good practice for programs to follow these rules.
+Runtime-generated information is supposed to live in `XDG_CACHE_HOME`, `XDG_DATA_HOME`, and `XDG_STATE_HOME` rather than in user configuration.
+Writing to configuration files at runtime makes versioning those files difficult, and users generally expect to be able to move their configuration to a location of their choosing for easier provisioning and organization.
 
-## Short-term Goals
+Unfortunately there are also many programs which do not follow these rules.
+You might be able to wrap them still, but you will run into more issues.
 
-Help us add more modules! Contributors are what makes projects like these which contain modules for so many programs amazing!
+Hopefully future helper modules utilizing technologies like `bubblewrap` can help with programs that give no way to specify configuration location.
+
+Criteria number 2 is because the file/directory is in the nix store and thus not writable.
+This is circumventable only by copying files out of the nix store at runtime, and is often an issue for NixOS and Home-Manager as well.
+
+## Roadmap
+
+Desired core library additions:
+
+- Per-module documentation generation options or functions usable by the end user for their own modules in their configuration.
+- A `bubblewrap` helper module which can help wrap difficult packages. Maybe also a `sandbox-exec` version for mac users.
+- Mac-only fixes for issues such as re-wrapping things in a binary wrapper for derivation locations that on macos require binaries.
+- DBus and udev service file options similar to the ones for systemd.
+
+We also accept prebuilt wrapper modules for common programs!
+
+This allows people to quickly jump in with using this project for those programs without needing to research the program's configuration mechanisms thoroughly enough to make a wrapper themselves.
+
+Contributors are what makes projects like these which contain modules for so many programs amazing! Thank you for your hard work!
 
 ## Related Extension Projects:
 
@@ -181,7 +197,7 @@ This allows you to easily modify your module with extra files and scripts or wha
 
 Maybe you want your `tmux` wrapper to also output a launcher script that rejoins a session, or creates one? You can do that using this project with, for example, a `drv.postBuild` hook! Just like in a derivation, and you can even use `"${placeholder "out"}"` in it!
 
-But you can supply it [from within the module system](https://birdeehub.github.io/nix-wrapper-modules/lib/core.html#drv)! You could then define an option to customize its behavior later!
+But you can supply it [from within the module system](https://nix-community.github.io/nix-wrapper-modules/lib/core.html#drv)! You could then define an option to customize its behavior later!
 
 In addition, the way it is implemented allows for the creation of helper modules that wrap derivations in all sorts of ways, which you could import instead of `wlib.modules.default` if you wanted. We could have similar modules for wrapping projects via bubblewrap or into docker containers with the same ease with which this library orchestrates regular wrapper scripts.
 

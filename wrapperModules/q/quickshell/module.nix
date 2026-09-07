@@ -38,7 +38,15 @@ in
         The quickshell shell.qml configuration file.
 
         Provide either inlined configuration or reference an external file.
-        It is used by quickshell using `--path`.
+      '';
+    };
+    configDir = mkOption {
+      type = wlib.types.linkable;
+      default = config.generated.placeholder;
+      description = ''
+        The full quickshell configuration directory.
+
+        It is passed to quickshell using `--path`.
       '';
     };
     components = mkOption {
@@ -81,7 +89,7 @@ in
   };
 
   config.package = mkDefault pkgs.quickshell;
-  config.flags."--path" = config.generated.placeholder;
+  config.flags."--path" = config.configDir;
 
   config.passthru.generatedConfigDir = "${
     config.wrapper.${config.generated.output}

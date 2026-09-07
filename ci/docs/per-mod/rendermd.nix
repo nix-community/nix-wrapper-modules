@@ -34,11 +34,17 @@
   declaredBy ?
     { declarations, ... }:
     let
+      removeViaOption =
+        str:
+        let
+          match = builtins.match "^(.*), via option .*$" str;
+        in
+        if match != null then builtins.elemAt match 0 else str;
       linkDest =
         v:
         if lib.hasPrefix wlib.modulesPath v then
-          "https://github.com/BirdeeHub/nix-wrapper-modules/blob/main"
-          + lib.removePrefix wlib.modulesPath (toString v)
+          "https://github.com/nix-community/nix-wrapper-modules/blob/main"
+          + lib.removePrefix wlib.modulesPath (removeViaOption (toString v))
         else
           toString v;
       linkName = v: lib.removeSuffix "/module.nix" (lib.removePrefix "${wlib.modulesPath}/" (toString v));
@@ -80,7 +86,7 @@ let
         (v: v)
     )
       ''
-        ## `${lib.options.showOption (opt.loc or [ ])}`
+        ### `${lib.options.showOption (opt.loc or [ ])}`
 
         ${mkOptField opt "description" ""}${mkOptField opt "relatedPackages" "Related packages:\n"}${
           mkOptField opt "type" "Type:${lib.optionalString (opt.readOnly or false == true) " (read-only)"}"
@@ -105,11 +111,22 @@ let
       moduleNotes = extraModuleNotes i mod;
     in
     lib.optionalString (mod.visible or [ ] != [ ]) ''
+      <details${if moduleStartsOpen i mod then " open" else ""}>
+      <summary>
+
       ## ${nameFromModule mod}
+
+      </summary>
+
       ${lib.optionalString (builtins.isString moduleNotes && moduleNotes != "") "\n${moduleNotes}\n"}
       ${lib.optionalString (mod.description.pre or "" != "" && descriptionIncluded "pre" i mod) ''
         <details${if descriptionStartsOpen "pre" i mod then " open" else ""}>
-          <summary></summary>
+        <summary>
+
+        ### Overview
+
+        </summary>
+
 
         ${mod.description.pre}
 
@@ -118,7 +135,11 @@ let
       ''}
       ${lib.optionalString (mod.visible or [ ] != [ ]) ''
         <details${if moduleStartsOpen i mod then " open" else ""}>
-          <summary></summary>
+          <summary>
+
+          ### Options
+
+          </summary>
 
         ${lib.pipe mod.visible [
           (map renderOption)
@@ -130,12 +151,17 @@ let
       ${lib.optionalString (mod.description.post or "" != "" && descriptionIncluded "post" i mod) ''
 
         <details${if descriptionStartsOpen "post" i mod then " open" else ""}>
-          <summary></summary>
+          <summary>
+
+          ### Notes
+
+          </summary>
 
         ${mod.description.post}
 
         </details>
       ''}
+      </details>
     '';
 in
 builtins.unsafeDiscardStringContext (
