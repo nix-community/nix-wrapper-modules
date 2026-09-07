@@ -7,17 +7,18 @@
 }:
 
 let
-  settingType = lib.types.oneOf [
-    lib.types.str
-    lib.types.bool
-    lib.types.int
-    (lib.types.attrsOf settingType)
-  ]
-  // {
-    description = "a GDB setting value, either a str, bool, int, or attribute set";
-    descriptionClass = "noun";
-    getSubOptions = _: { };
-  };
+  settingType =
+    lib.types.oneOf [
+      lib.types.str
+      lib.types.bool
+      lib.types.int
+      (lib.types.attrsOf settingType)
+    ]
+    // {
+      description = "a GDB setting value, either a str, bool, int, or attribute set";
+      descriptionClass = "noun";
+      getSubOptions = _: { };
+    };
 
   flattenSetting = (
     value: if lib.isBool value then if value then "on" else "off" else toString value
