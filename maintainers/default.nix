@@ -121,4 +121,9 @@
     github = "aliaslion";
     githubId = 122117018;
   };
+  jasdeep = {
+    name = "Jasdeep Dhillon";
+    github = "jasdeep-dhillon";
+    githubId = 59929844;
+  };
 }
