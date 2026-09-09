@@ -121,4 +121,10 @@
     github = "aliaslion";
     githubId = 122117018;
   };
+  lodwkobku = {
+    email = "lodwkobku+nixpkgs@gmail.com";
+    github = "LodWKobku";
+    githubId = 101132529;
+    name = "LodWKobku";
+  };
 }
