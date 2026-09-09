@@ -18,15 +18,13 @@ let
   isLinkable = wlib.types.linkable.check;
   makeForce = lib.mkOverride 0;
 
-  componentType = types.submodule {
-    freeformType = types.lazyAttrsOf (
-      types.oneOf [
-        wlib.types.linkable
-        types.lines
-        (componentType // { description = "nested components"; })
-      ]
-    );
-  };
+  componentType = types.lazyAttrsOf (
+    types.oneOf [
+      wlib.types.linkable
+      types.lines
+      (componentType // { description = "nested components"; })
+    ]
+  );
 in
 {
   imports = [ wlib.modules.default ];
