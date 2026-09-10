@@ -439,7 +439,7 @@ in
     description = ''
       Content of the init.lua file.
     '';
-    type = lib.types.nullOr (lib.types.either lib.types.path lib.types.lines);
+    type = lib.types.nullOr (lib.types.either wlib.types.linkable lib.types.lines);
     example = lib.literalMD ''
       ```lua
       require("session"):setup {
@@ -539,8 +539,8 @@ in
     // {
       initlua = lib.mkIf (config.initLua != null) {
         relPath = "${config.binName}-config/init.lua";
-        content =
-          if builtins.isPath config.initLua then builtins.readFile config.initLua else config.initLua;
+        content = lib.mkIf (!wlib.types.linkable.check config.initLua) config.initLua;
+        builder = lib.mkIf (wlib.types.linkable.check config.initLua) ''ln -s ${config.initLua} "$2"'';
       };
     };
   config.meta.maintainers = [ wlib.maintainers.apetrovic6 ];
