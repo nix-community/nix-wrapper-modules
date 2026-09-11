@@ -538,7 +538,8 @@ in
     )
     // {
       initlua = lib.mkIf (config.initLua != null) {
-        relPath = "${config.binName}-config/init.lua";
+        relPath = lib.mkOverride 0 "${config.binName}-config/init.lua";
+        output = lib.mkOverride 0 config.generatedConfig.output;
         content = lib.mkIf (!wlib.types.linkable.check config.initLua) config.initLua;
         builder = lib.mkIf (wlib.types.linkable.check config.initLua) ''ln -s ${config.initLua} "$2"'';
       };
