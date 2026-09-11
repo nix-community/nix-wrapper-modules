@@ -127,4 +127,9 @@
     githubId = 101132529;
     name = "LodWKobku";
   };
+  Nadim147c = {
+    github = "Nadim147c";
+    githubId = 90786729;
+    name = "Ephemeral";
+  };
 }
