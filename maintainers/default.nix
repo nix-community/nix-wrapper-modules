@@ -127,4 +127,10 @@
     githubId = 101132529;
     name = "LodWKobku";
   };
+  sibaldh = {
+    name = "Sibald Hulselmans";
+    email = "sibald.hulselmans@protonmail.com";
+    github = "sibaldh";
+    githubId = "94047298";
+  };
 }
