@@ -122,7 +122,7 @@
     githubId = 122117018;
   };
   lodwkobku = {
-    email = "lodwkobku+nixpkgs@gmail.com";
+    email = "lodwkobku@proton.me";
     github = "LodWKobku";
     githubId = 101132529;
     name = "LodWKobku";
