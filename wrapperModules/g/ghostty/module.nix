@@ -82,6 +82,13 @@ in
       "--config-default-files=false"
       "--config-file=${config.constructFiles.ghosttyConfig.path}"
     ];
+    wrapperVariants.ghostty = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+      wrapperImplementation = "binary";
+      mirror = false;
+      package = placeholder "out";
+      exePath = lib.removePrefix "/" config.wrapperPaths.relPath;
+      binDir = "Applications/Ghostty.app/Contents/MacOS";
+    };
     # Ghostty has no environment variable for specifying a config file, so CLI
     # flags are the only option: --config-default-files=false prevents loading
     # the host's ~/.config/ghostty/config (including on machines where one
