@@ -721,6 +721,56 @@ in
   toKdl = import ./toKdl.nix { inherit lib wlib; };
 
   /**
+    Converts a Nix value to a Hypr conf string.
+
+    Parameters:
+    - `attrs`: Attrset of hypr conf keywords assigned either a value (string, boolean, number), a list of such values or an attrset that has the same structure:
+        value: a keyword statement is generated (https://wiki.hypr.land/0.54.0/Configuring/Keywords/)
+        list: for each value a separate keyword statement is generated
+        attrset: a section to configure variables is generated (https://wiki.hypr.land/0.54.0/Configuring/Variables/)
+    - `indentLevel`: (optional, default: 0) Start at a custom indent level
+    - `importantPrefixes`: (optional, default: [ "$" ]) Prefixes of keywords that should be generated first
+
+    Example:
+    ```nix
+      toHyprconf {
+        attrs = {
+          general = {
+            border_size = 2;
+            "col.active_border" = "rgba(FF0000EE)";
+          };
+
+          bind = [
+            "$mod, H, movefocus, l"
+            "$mod, J, movefocus, d"
+            "$mod, K, movefocus, u"
+            "$mod, L, movefocus, r"
+          ];
+
+          "$mod" = "SUPER";
+        };
+      }
+    ```
+
+    will generate the following hypr conf
+
+    ```
+    $mod = SUPER
+
+    general {
+      border_size = 2
+      col.active_border = rgba(FF0000EE)
+    }
+
+    bind = $mod, H, movefocus, l
+    bind = $mod, J, movefocus, d
+    bind = $mod, K, movefocus, u
+    bind = $mod, L, movefocus, r
+    ```
+  */
+  toHyprconf = import ./toHyprconf.nix { inherit lib; };
+
+  /**
     Sanitize a string into a valid environment variable name.
 
     This function sanitizes all characters that are not allowed in typical
