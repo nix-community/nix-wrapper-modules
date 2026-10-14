@@ -131,4 +131,9 @@
     github = "jonas-elhs";
     githubId = 177471339;
   };
+  nuclear-squid = {
+    name = "Nuclear-Squid";
+    github = "Nuclear-Squid";
+    githubId = 70967142;
+  };
 }
