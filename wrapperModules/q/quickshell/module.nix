@@ -84,7 +84,45 @@ in
       default = "${placeholder config.generated.output}/${config.binName}-config";
       description = "A placeholder for the generated config dir";
     };
+    info = lib.mkOption {
+      type =
+        lib.types.addCheck wlib.types.attrsRecursive (
+          x: builtins.all (n: builtins.match "^[a-zA-Z_][a-zA-Z0-9_]*$" n != null) (builtins.attrNames x)
+        )
+        // {
+          description = "qml property with json content";
+        };
+      default = { };
+      description = ''
+        This option allows you to pass information to the quickshell configuration separate from the configuration file/directory.
+
+        If you override the `config.configDir` option, you will no longer be able to pass qml code from nix easily, in exchange for being able to simply provide a normal quickshell directory to the module.
+
+        But you may still wish to pass information to the configuration from nix.
+
+        In your qml files, you may use `import NixInfo` and then `NixInfo.your.value` from the values passed to this info option.
+
+        The name `NixInfo` is also configurable with the `infoModuleName` option.
+
+        The top level keys in this attribute set must be valid qml property names. Keys nested further may be any string, as they are represented as qml properties with json values.
+
+        This module will be made available to the qml quickshell configuration regardless of how the configuration directory is specified.
+      '';
+    };
+    infoModuleName = lib.mkOption {
+      type = lib.types.str;
+      default = "NixInfo";
+      description = "Configures the importable name for the generated qml info module";
+    };
   };
+
+  config.prefixVar = [
+    [
+      "QML2_IMPORT_PATH"
+      ":"
+      "${dirOf (dirOf config.constructFiles.nixInfo.path)}"
+    ]
+  ];
 
   config.package = mkDefault pkgs.quickshell;
   config.flags."--path" = config.configDir;
@@ -132,6 +170,28 @@ in
         builder = mkIf (isLinkable config.configFile) ''ln -s ${config.configFile} "$2"'';
         output = makeForce config.generated.output;
         relPath = makeForce "${config.binName}-config/shell.qml";
+      };
+      nixInfoQmlDir = {
+        relPath = makeForce (dirOf config.constructFiles.nixInfo.relPath + "/qmldir");
+        output = makeForce config.constructFiles.nixInfo.output;
+        content = ''
+          module ${config.infoModuleName}
+          singleton ${config.infoModuleName} 1.0 ${config.infoModuleName}.qml
+        '';
+      };
+      nixInfo = {
+        relPath = "qml-path-dirs/${config.infoModuleName}/${config.infoModuleName}.qml";
+        output = config.generated.output;
+        content = /* qml */ ''
+          pragma Singleton
+          import QtQml
+          QtObject {
+            ${lib.pipe config.info [
+              (lib.mapAttrsToList (n: v: "readonly property var ${n}: (${builtins.toJSON v})"))
+              (builtins.concatStringsSep "\n  ")
+            ]}
+          }
+        '';
       };
     };
 
