@@ -328,6 +328,29 @@ in
   escapeShellArgWithEnv = arg: ''"${lib.escape [ ''\'' ''"'' ] (toString arg)}"'';
 
   /**
+    Escape all shell arguments while preserving environment variable expansion.
+
+    Technically just applies escapeShellArgWithEnv to each element of list and
+    concatenate them with " " (space) as separator.
+    Useful to make shell command with arguments from a list.
+
+    # Type
+
+    ```
+    escapeShellArgs :: [String] -> String
+    ```
+
+    # Examples
+
+    ```nix
+    escapeShellArgsWithEnv [ "install" "$HOME/config.txt" "$XDG_CONFIG_HOME/app/config.txt" ]
+
+    => "install \"$HOME/config.txt\" \"$XDG_CONFIG_HOME/app/config.txt\""
+    ```
+  */
+  escapeShellArgsWithEnv = lib.concatMapStringsSep " " wlib.escapeShellArgWithEnv;
+
+  /**
     Wrap a function (or callable attribute set) to make it customizable via a
     named override entry.
 
