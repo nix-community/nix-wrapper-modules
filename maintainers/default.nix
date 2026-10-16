@@ -136,4 +136,10 @@
     githubId = 90786729;
     name = "Ephemeral";
   };
+  kuppo = {
+    name = "Peng Lei";
+    email = "swk-pl@163.com";
+    github = "kuppo";
+    githubId = "17398733";
+  };
 }
