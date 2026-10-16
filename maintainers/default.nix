@@ -131,6 +131,11 @@
     github = "jonas-elhs";
     githubId = 177471339;
   };
+  Nadim147c = {
+    github = "Nadim147c";
+    githubId = 90786729;
+    name = "Ephemeral";
+  };
   ionawr = {
     name = "ionawr";
     github = "ionawr";
