@@ -169,4 +169,9 @@
     github = "szymon-jozef";
     githubId = 98268045;
   };
+  WinterMaximus = {
+    name = "WinterMaximus";
+    github = "WinterMaximus";
+    githubId = 251295678;
+  };
 }
