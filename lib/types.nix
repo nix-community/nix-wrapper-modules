@@ -545,9 +545,9 @@ in
     Creates a value type suitable for serialization formats.
 
     Parameters:
-    - typeName: String describing the format (e.g. "JSON", "YAML", "XML")
-    - nullable: Whether the structured value type allows `null` values.
-    - extraValueTypes: List of extra value types to allow, e.g. "[ lib.types.luaInline ]"
+    - typeName: String describing the format (e.g. "JSON", "YAML", "XML"). Required.
+    - nullable: Whether the structured value type allows `null` values. Defaults to `true`.
+    - extraValueTypes: List of extra value types to allow, e.g. "[ lib.types.luaInline ]". Defaults to `[]`.
 
     Returns a type suitable for structured data formats that supports:
     - Basic types: boolean, integer, float, string, path

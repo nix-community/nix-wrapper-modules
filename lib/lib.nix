@@ -303,9 +303,11 @@ in
 
     environment variable expansion (e.g., `$HOME`, `${VAR}`).
 
-    Caution! This is best used by the `nix` backend for `wlib.modules.makeWrapper` to escape things,
+    This is best used by the `nix` backend for `wlib.modules.makeWrapper` to escape things,
     because the `shell` and `binary` implementations pass their args to `pkgs.makeWrapper` at **build** time,
     so allowing variable expansion may not always do what you expect!
+
+    Caution! It is not subshell-aware, and thus must be used with caution if subshell expansion is likely.
 
     - Example:
 
