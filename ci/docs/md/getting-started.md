@@ -97,7 +97,7 @@ The package (via `passthru`) and the modules under `.config` both offer all 3 fu
 ```nix
 # Apply initial configuration
 # you can use `.eval` `.apply` or `.wrap` for this.
-initialConfig = (inputs.wrappers.wrappers.tmux.eval ({config, pkgs, ...}{
+initialConfig = (inputs.wrappers.wrappers.tmux.eval ({config, pkgs, ...}: {
   # but if you don't plan to provide pkgs yet, you can't use `.wrap` or `.wrapper` yet.
   # config.pkgs = pkgs;
   # but we can still use `pkgs` before that inside!
