@@ -141,4 +141,9 @@
     github = "ionawr";
     githubId = 219933002;
   };
+  nuclear-squid = {
+    name = "Nuclear-Squid";
+    github = "Nuclear-Squid";
+    githubId = 70967142;
+  };
 }
