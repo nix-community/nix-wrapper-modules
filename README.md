@@ -131,7 +131,6 @@ This is circumventable only by copying files out of the nix store at runtime, an
 
 Desired core library additions:
 
-- Per-module documentation generation options or functions usable by the end user for their own modules in their configuration.
 - A `bubblewrap` helper module which can help wrap difficult packages. Maybe also a `sandbox-exec` version for mac users.
 - Mac-only fixes for issues such as re-wrapping things in a binary wrapper for derivation locations that on macos require binaries.
 - DBus and udev service file options similar to the ones for systemd.
