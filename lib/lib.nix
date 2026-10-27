@@ -21,6 +21,8 @@ in
 
   types = import ./types.nix { inherit lib wlib; };
 
+  docs = import ./docs { inherit lib wlib; };
+
   dag = import ./dag.nix { inherit lib wlib; };
 
   makeWrapper = import ./makeWrapper { inherit lib wlib; };
