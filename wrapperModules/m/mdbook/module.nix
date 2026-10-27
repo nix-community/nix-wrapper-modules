@@ -365,6 +365,13 @@ in
         If not null, replace the main package with a link to the generator script for that book
       '';
     };
+    buildCommand = lib.mkOption {
+      type = lib.types.attrsOf (
+        wlib.types.spec {
+          config.before = [ "mkMdBooks" ];
+        }
+      );
+    };
   };
 
   config = {
@@ -444,40 +451,37 @@ in
           }
         ))
       ];
-      buildPhase = # bash
-      ''
-        runHook preBuild
-        jq -r '.bookData | values[] | @base64' "$NIX_ATTRS_JSON_FILE" |
-        while read -r entry; do
-          value="$(printf '%s' "$entry" | base64 --decode)"
-          book_src="$(printf '%s' "$value" | jq -r '.src')"
-          book_root="$(printf '%s' "$value" | jq -r '.root')"
-
-          # this is the innermost dir this section handles
-          mkdir -p "$book_src"
-
-          # generate summary
-          printf '%s' "$value" | jq -r '.summary' > "$book_src/SUMMARY.md"
-
-          # generate book.toml
-          printf '%s' "$value" | jq -r '.book' | json2toml > "$book_root/book.toml"
-
-          # generate book contents
-          eval "$(printf '%s' "$value" | jq -r '.build')"
-        done
-      ''
-      +
-        lib.optionalString
-          (
-            config.mainBook != null
-            && config.wrapperVariants."${config.mainBook}".enable or false == true
-            && config.books."${config.mainBook}".enable or false == true
-          )
-          ''
-            ln -sf ${config.mainBook} ${config.wrapperPaths.placeholder}
-          ''
-      + "\nrunHook postBuild";
     };
+    buildCommand.mkMdBooks = ''
+      jq -r '.bookData | values[] | @base64' "$NIX_ATTRS_JSON_FILE" |
+      while read -r entry; do
+        value="$(printf '%s' "$entry" | base64 --decode)"
+        book_src="$(printf '%s' "$value" | jq -r '.src')"
+        book_root="$(printf '%s' "$value" | jq -r '.root')"
+
+        # this is the innermost dir this section handles
+        mkdir -p "$book_src"
+
+        # generate summary
+        printf '%s' "$value" | jq -r '.summary' > "$book_src/SUMMARY.md"
+
+        # generate book.toml
+        printf '%s' "$value" | jq -r '.book' | json2toml > "$book_root/book.toml"
+
+        # generate book contents
+        eval "$(printf '%s' "$value" | jq -r '.build')"
+      done
+    ''
+    +
+      lib.optionalString
+        (
+          config.mainBook != null
+          && config.wrapperVariants."${config.mainBook}".enable or false == true
+          && config.books."${config.mainBook}".enable or false == true
+        )
+        ''
+          ln -sf ${config.mainBook} ${config.wrapperPaths.placeholder}
+        '';
     passthru.book-out-dir = book-out-dir;
     package = lib.mkDefault pkgs.mdbook;
     meta.maintainers = [ wlib.maintainers.birdee ];
