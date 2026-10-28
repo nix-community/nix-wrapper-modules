@@ -152,4 +152,10 @@
     github = "kuppo";
     githubId = "17398733";
   };
+  sibaldh = {
+    name = "Sibald Hulselmans";
+    email = "sibald.hulselmans@protonmail.com";
+    github = "sibaldh";
+    githubId = "94047298";
+  };
 }
