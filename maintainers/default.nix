@@ -152,4 +152,9 @@
     github = "kuppo";
     githubId = "17398733";
   };
+  nuclear-squid = {
+    name = "Nuclear-Squid";
+    github = "Nuclear-Squid";
+    githubId = 70967142;
+  };
 }
