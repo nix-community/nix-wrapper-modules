@@ -172,6 +172,8 @@ in
     relPath = "${config.binName}-config.lua";
   };
 
+  config.wrapperImplementation = "binary";
+
   config.meta = {
     maintainers = [ wlib.maintainers.jonas-elhs ];
     platforms = lib.platforms.linux;
