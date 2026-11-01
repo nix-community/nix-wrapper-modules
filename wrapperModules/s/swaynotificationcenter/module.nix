@@ -1,11 +1,18 @@
-{ config, lib, wlib, pkgs, ... }: {
-  imports = [wlib.modules.default];
+{
+  config,
+  lib,
+  wlib,
+  pkgs,
+  ...
+}:
+{
+  imports = [ wlib.modules.default ];
 
   options = {
     settings = lib.mkOption {
       type = wlib.types.structuredValueWith { typeName = "JSON"; };
 
-      default = {};
+      default = { };
 
       description = ''
         SwayNotificationCenter configuration settings.
@@ -52,7 +59,7 @@
       "--style" = config.constructFiles.generatedStyle.path;
     };
 
-    meta.maintainers = [wlib.maintainers.leafayon];
+    meta.maintainers = [ wlib.maintainers.leafayon ];
 
     meta.platforms = lib.platforms.linux;
   };
