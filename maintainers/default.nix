@@ -152,4 +152,10 @@
     github = "kuppo";
     githubId = "17398733";
   };
+  leafayon = {
+    name = "Leaf'";
+    email = "leafayon@pm.me";
+    github = "leafayon";
+    githubId = 57141624;
+  };
 }
