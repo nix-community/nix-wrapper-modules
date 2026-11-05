@@ -4,14 +4,12 @@
   normWrapperDocs,
   fixupDocValues,
 }:
-# TODO: figure out how to simplify these options quite a bit.
-# Or maybe just a little bit but then have a helper module which wraps it?
 {
   options,
   includeCore ? true,
   transform ? null,
   prefix ? false,
-  warningsAreErrors ? true,
+  warningsAreErrors ? false,
   nameFromModule ?
     { file, ... }:
     lib.removeSuffix "/module.nix" (lib.removePrefix "${wlib.modulesPath}/" (toString file)),
@@ -21,10 +19,10 @@
     i == 1,
   descriptionIncluded ?
     type: i: mod:
-    if type == "pre" then true else i == 1,
+    true,
   extraModuleNotes ?
     i:
-    { maintainers, ... }:
+    { maintainers, ... }@mod:
     lib.optionalString (maintainers != [ ] && i == 1) (
       "This module is made possible by: "
       + builtins.concatStringsSep ", " (
@@ -32,7 +30,7 @@
       )
     ),
   declaredBy ?
-    { declarations, ... }:
+    { declarations, ... }@opt:
     let
       removeViaOption =
         str:
@@ -50,7 +48,6 @@
       linkName = v: lib.removeSuffix "/module.nix" (lib.removePrefix "${wlib.modulesPath}/" (toString v));
     in
     builtins.concatStringsSep "\n" (map (v: "- [${linkName v}](${linkDest v})") declarations),
-  ...
 }:
 let
   normed =
@@ -135,11 +132,11 @@ let
       ''}
       ${lib.optionalString (mod.visible or [ ] != [ ]) ''
         <details${if moduleStartsOpen i mod then " open" else ""}>
-          <summary>
+        <summary>
 
-          ### Options
+        ### Options
 
-          </summary>
+        </summary>
 
         ${lib.pipe mod.visible [
           (map renderOption)
@@ -151,11 +148,11 @@ let
       ${lib.optionalString (mod.description.post or "" != "" && descriptionIncluded "post" i mod) ''
 
         <details${if descriptionStartsOpen "post" i mod then " open" else ""}>
-          <summary>
+        <summary>
 
-          ### Notes
+        ### Notes
 
-          </summary>
+        </summary>
 
         ${mod.description.post}
 

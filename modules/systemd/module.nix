@@ -672,13 +672,13 @@ let
               enable = lib.mkOption {
                 type = lib.types.bool;
                 default = true;
-                description = "Enable generation of ${id} unit file.";
+                description = "Enable generation of `${id}` unit file.";
               };
               doInstall = lib.mkOption {
                 type = lib.types.bool;
                 default = true;
                 description = ''
-                  Create .wants .requires and .upholds links for ${id} unit.
+                  Create `.wants` `.requires` and `.upholds` links for `${id}` unit.
                   (This will enable the service file automatically on next restart if the derivation ends up in your systemd unit search path.)
                 '';
               };
@@ -690,12 +690,12 @@ let
               prefixedContent = lib.mkOption {
                 type = lib.types.lines;
                 default = "";
-                description = "Content to prepend to the beginning of the generated ${id} unit file.";
+                description = "Content to prepend to the beginning of the generated `${id}` unit file.";
               };
               suffixedContent = lib.mkOption {
                 type = lib.types.lines;
                 default = "";
-                description = "Content to append to the end of the generated ${id} unit file.";
+                description = "Content to append to the end of the generated `${id}` unit file.";
               };
             };
         };
