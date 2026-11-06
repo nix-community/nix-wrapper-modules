@@ -152,4 +152,9 @@
     github = "kuppo";
     githubId = "17398733";
   };
+  yushisora = {
+    name = "Yushi Sora";
+    github = "yushisora";
+    githubId = 217601897;
+  };
 }
