@@ -32,7 +32,7 @@
       };
     };
 
-    "style.css" = lib.mkOption {
+    stylesheet = lib.mkOption {
       type = lib.types.lines;
 
       default = "";
