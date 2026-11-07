@@ -163,4 +163,9 @@
     github = "jasdeep-dhillon";
     githubId = 59929844;
   };
+  nuclear-squid = {
+    name = "Nuclear-Squid";
+    github = "Nuclear-Squid";
+    githubId = 70967142;
+  };
 }
