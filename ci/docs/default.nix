@@ -87,6 +87,15 @@
             '';
           }
           {
+            name = "`wlib.generators`";
+            data = "numbered";
+            path = "lib/generators.md";
+            src = "${placeholder "generated"}/wrappers-lib/generators.md";
+            build = ''
+              ${pkgs.nixdoc}/bin/nixdoc --category "generators" --description '`wlib.generators` set documentation' --file '${../../lib/generators.nix}' --prefix "wlib" >> $generated/wrappers-lib/generators.md
+            '';
+          }
+          {
             name = "`wlib.docs`";
             data = "numbered";
             path = "lib/docs.md";
@@ -96,12 +105,12 @@
             '';
           }
           {
-            name = "`wlib.generators`";
+            name = "`wlib.test`";
             data = "numbered";
-            path = "lib/generators.md";
-            src = "${placeholder "generated"}/wrappers-lib/generators.md";
+            path = "lib/test.md";
+            src = "${placeholder "generated"}/wrappers-lib/test.md";
             build = ''
-              ${pkgs.nixdoc}/bin/nixdoc --category "generators" --description '`wlib.generators` set documentation' --file '${../../lib/generators.nix}' --prefix "wlib" >> $generated/wrappers-lib/generators.md
+              ${pkgs.nixdoc}/bin/nixdoc --category "test" --description '`wlib.test` set documentation' --file '${../../lib/test.nix}' --prefix "wlib" >> $generated/wrappers-lib/test.md
             '';
           }
         ];

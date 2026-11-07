@@ -23,6 +23,8 @@ in
 
   docs = import ./docs { inherit lib wlib; };
 
+  test = import ./test.nix { inherit lib wlib; };
+
   dag = import ./dag.nix { inherit lib wlib; };
 
   makeWrapper = import ./makeWrapper { inherit lib wlib; };
