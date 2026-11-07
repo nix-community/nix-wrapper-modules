@@ -158,4 +158,9 @@
     github = "leafayon";
     githubId = 57141624;
   };
+  jasdeep = {
+    name = "Jasdeep Dhillon";
+    github = "jasdeep-dhillon";
+    githubId = 59929844;
+  };
 }

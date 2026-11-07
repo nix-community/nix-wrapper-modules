@@ -1,14 +1,12 @@
 {
   lib,
   wlib,
-  defaultOptionTransform,
 }:
 {
   options,
   prefix ? false,
   transform ? null,
   includeCore ? true,
-  ...
 }:
 let
   evaluated =
@@ -16,6 +14,13 @@ let
       _: throw "nix-wrapper-modules docgen error: the options set passed was not from a wrapper module!"
     )
     { ${if prefix == null || builtins.isList prefix then "prefix" else null} = prefix; };
+
+  # TODO: This might not be robust enough?
+  # Maybe check for pairings with all the regular suboptions of _module
+  # Also, should it automatically add relatedPackages to some options somehow?
+  # Technically users can do that themselves with option merging within the modules,
+  # but should we try here? Could be nice?
+  defaultOptionTransform = x: if builtins.elem "_module" x.loc then [ ] else [ x ];
 in
 let
   inherit (evaluated) options graph;
