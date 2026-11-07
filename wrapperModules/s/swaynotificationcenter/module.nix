@@ -50,7 +50,7 @@
     };
 
     constructFiles.generatedStyle = {
-      content = config.stylesheet.content;
+      content = config.stylesheet;
       relPath = "${config.binName}-style.css";
     };
 
