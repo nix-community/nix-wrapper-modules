@@ -8,10 +8,13 @@
       forAllSystems = lib.genAttrs lib.platforms.all;
       wlib-flake =
         pkgs: if pkgs == null then import ./.. { inherit nixpkgs; } else import ./.. { inherit pkgs; };
-      wlib-flake-nofmt = removeAttrs (wlib-flake null) [ "formatter" ];
-      wlib = wlib-flake-nofmt.lib;
+      wlib-flake-nopkgs = removeAttrs (wlib-flake null) [
+        "formatter"
+        "devShells"
+      ];
+      wlib = wlib-flake-nopkgs.lib;
     in
-    wlib-flake-nofmt
+    wlib-flake-nopkgs
     // {
       checks = forAllSystems (
         system:
@@ -64,7 +67,10 @@
         // checksFrom "wrapperModule" (wlib.checks.wrapper or { })
       );
       formatter = forAllSystems (
-        system: (wlib-flake (import nixpkgs { inherit system; })).formatter.${system}
+        system: (wlib-flake nixpkgs.legacyPackages.${system}).formatter.${system}
+      );
+      devShells = forAllSystems (
+        system: (wlib-flake nixpkgs.legacyPackages.${system}).devShells.${system}
       );
       packages = forAllSystems (system: {
         default = self.packages.${system}.docs.wrap { warningsAreErrors = true; };
