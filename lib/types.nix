@@ -577,4 +577,27 @@ in
       };
     in
     valueType;
+
+  /*
+    from:
+    https://github.com/nix-community/home-manager/blob/8a423e444b17dde406097328604a64fc7429e34e/modules/programs/hyprlock.nix
+  */
+  hyprConfValue =
+    with lib.types;
+    let
+      valueType =
+        nullOr (oneOf [
+          bool
+          int
+          float
+          str
+          path
+          (attrsOf valueType)
+          (listOf valueType)
+        ])
+        // {
+          description = "Hyprlock configuration value";
+        };
+    in
+    valueType;
 }

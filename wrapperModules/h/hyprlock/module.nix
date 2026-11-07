@@ -5,103 +5,12 @@
   pkgs,
   ...
 }:
-let
-  /*
-    from:
-    https://github.com/nix-community/home-manager/blob/8a423e444b17dde406097328604a64fc7429e34e/modules/lib/generators.nix
-  */
-  toHyprconf =
-    {
-      attrs,
-      indentLevel ? 0,
-      importantPrefixes ? [ "$" ],
-    }:
-    let
-      inherit (lib)
-        all
-        concatMapStringsSep
-        concatStrings
-        concatStringsSep
-        filterAttrs
-        foldl
-        generators
-        hasPrefix
-        isAttrs
-        isList
-        mapAttrsToList
-        replicate
-        attrNames
-        ;
-
-      initialIndent = concatStrings (replicate indentLevel "  ");
-
-      toHyprconf' =
-        indent: attrs:
-        let
-          isImportantField =
-            n: _: foldl (acc: prev: if hasPrefix prev n then true else acc) false importantPrefixes;
-          importantFields = filterAttrs isImportantField attrs;
-          withoutImportantFields = fields: removeAttrs fields (attrNames importantFields);
-
-          allSections = filterAttrs (_n: v: isAttrs v || isList v) attrs;
-          sections = withoutImportantFields allSections;
-
-          mkSection =
-            n: attrs:
-            if isList attrs then
-              let
-                separator = if all isAttrs attrs then "\n" else "";
-              in
-              (concatMapStringsSep separator (a: mkSection n a) attrs)
-            else if isAttrs attrs then
-              ''
-                ${indent}${n} {
-                ${toHyprconf' "  ${indent}" attrs}${indent}}
-              ''
-            else
-              toHyprconf' indent { ${n} = attrs; };
-
-          mkFields = generators.toKeyValue {
-            listsAsDuplicateKeys = true;
-            inherit indent;
-          };
-
-          allFields = filterAttrs (_n: v: !(isAttrs v || isList v)) attrs;
-          fields = withoutImportantFields allFields;
-        in
-        mkFields importantFields
-        + concatStringsSep "\n" (mapAttrsToList mkSection sections)
-        + mkFields fields;
-    in
-    toHyprconf' initialIndent attrs;
-in
 {
   imports = [ wlib.modules.default ];
 
   options = {
     settings = lib.mkOption {
-      /*
-        from:
-        https://github.com/nix-community/home-manager/blob/8a423e444b17dde406097328604a64fc7429e34e/modules/programs/hyprlock.nix
-      */
-      type =
-        with lib.types;
-        let
-          valueType =
-            nullOr (oneOf [
-              bool
-              int
-              float
-              str
-              path
-              (attrsOf valueType)
-              (listOf valueType)
-            ])
-            // {
-              description = "Hyprlock configuration value";
-            };
-        in
-        valueType;
+      type = wlib.types.hyprConfValue;
       default = { };
       example = lib.literalExpression ''
         {
@@ -140,10 +49,12 @@ in
       type = wlib.types.file {
         path = lib.mkOptionDefault config.constructFiles.generatedConfig.path;
         content = (
-          lib.optionalString (config.settings != { }) (toHyprconf {
-            inherit (config) importantPrefixes;
-            attrs = config.settings;
-          })
+          lib.optionalString (config.settings != { }) (
+            wlib.toHyprconf {
+              inherit (config) importantPrefixes;
+              attrs = config.settings;
+            }
+          )
           + lib.optionalString (config.extraConfig != "") config.extraConfig
         );
       };
