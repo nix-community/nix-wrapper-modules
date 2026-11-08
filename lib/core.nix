@@ -916,6 +916,7 @@ in
             dontConfigure = true;
             dontPatch = true;
             dontFixup = true;
+            preferLocalBuild = true;
             name = package.name or "${package.pname or binName}-${version}";
             ${
               if builtins.isString (package.pname or binName) && package.pname or binName != "" then
