@@ -81,17 +81,38 @@ test { wrapper = "difftastic"; } {
     in
     ''grep -Fq -- "'--override-binary=*.qcow2' '--override-binary=file.iso'" ${wrapper}/bin/difft'';
 
-  "If min-width setting set wrapper script should have a script to calculate and set width" =
+  "If min-width/max-width setting set wrapper script should have a script to calculate and set width" =
     let
       wrapper = wm.wrap {
         inherit pkgs;
         settings = {
           min-width = 120;
+          max-width = 150;
         };
       };
     in
     [
+      (fileContains "${wrapper}/bin/difft" "MIN_WIDTH=120")
+      (fileContains "${wrapper}/bin/difft" "MAX_WIDTH=150")
       (fileContains "${wrapper}/bin/difft" "stty size")
-      (fileContains "${wrapper}/bin/difft" "wrapperSetEnvDefault DFT_WIDTH 120")
+      (fileContains "${wrapper}/bin/difft" "wrapperSetEnvDefault DFT_WIDTH \\$MIN_WIDTH")
+      (fileContains "${wrapper}/bin/difft" "wrapperSetEnvDefault DFT_WIDTH \\$MAX_WIDTH")
     ];
+
+  "max-width should be greater then min-width" =
+    let
+      wrapper = builtins.tryEval (
+        wm.wrap {
+          inherit pkgs;
+          settings = {
+            min-width = 120;
+            max-width = 100;
+          };
+        }
+      );
+      result = builtins.toJSON wrapper;
+    in
+    # {success:false,value:false} <- expected
+    # {success:true,value:/nix/store/imizgw3d1l07dcqxkhm815sz3ixnwqzy-difftastic-0.72.0} <- not expected
+    ''echo '${result}' | ${lib.getExe pkgs.jq} -e ".success | not"'';
 }

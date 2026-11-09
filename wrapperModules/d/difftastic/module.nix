@@ -26,8 +26,18 @@ let
   ) "";
 
   settingsToEnv = lib.pipe config.settings [
-    (lib.filterAttrs (_: value: value != null)) # settings with null values do not need to be handled
-    (lib.filterAttrs (name: _: !lib.hasPrefix "override" name)) # override* settings need special handling
+    # settings with null values do not need to be handled
+    (lib.filterAttrs (_: value: value != null))
+    # custom min-width/max-width settings need special handling
+    (lib.filterAttrs (
+      name: _:
+      !lib.elem name [
+        "min-width"
+        "max-width"
+      ]
+    ))
+    # override* settings need special handling
+    (lib.filterAttrs (name: _: !lib.hasPrefix "override" name))
     (lib.mapAttrs' (name: value: lib.nameValuePair (mkEnvVarName name) (mkEnvVarValue value)))
   ];
 in
@@ -236,14 +246,32 @@ in
       '';
     };
     min-width = lib.mkOption {
-      type = lib.types.nullOr lib.types.ints.unsigned;
+      type = lib.types.nullOr lib.types.ints.positive;
       default = null;
       description = ''
         Custom option to prevent difftastic (in runtime) to set width lower then
         the given number of columns.
-        Takes effect only when settings.width isn't set but still allow overriding
+        Takes effect only when non-zero and settings.width isn't set. Still allows overriding
         width by cli flag and/or env variable passed outside the wrapper settings.
       '';
+    };
+    max-width = lib.mkOption {
+      type = lib.types.nullOr lib.types.ints.positive;
+      default = null;
+      description = ''
+        Custom option to prevent difftastic (in runtime) to set width higher then
+        the given number of columns.
+        Takes effect only when non-zero and settings.width isn't set. Still allows overriding
+        width by cli flag and/or env variable passed outside the wrapper settings.
+      '';
+      apply =
+        x:
+        if x != null && x < config.settings.min-width then
+          throw "nix-wrapper-modules difftastic: settings.max-width must be greater then settings.min-width"
+        else if x != null && x == config.settings.min-width then
+          lib.warn "nix-wrapper-modules difftastic: settings.max-width is equal to settings.min-width, use settings.width instead" x
+        else
+          x;
     };
   };
 
@@ -261,25 +289,40 @@ in
       data = config.settings.override-binary;
     };
 
-    # min-width is need to be calculated in runtime
-    runShell = lib.mkIf (config.settings.min-width != null && config.settings.width == null) [
-      /* bash */ ''
-        POSITIONAL=()
-        while [[ $# -gt 0 ]]; do
-          key="$1"
-          case $key in
-            --width=*) WIDTH="$(echo "$1" | cut -d'=' -f2)"; shift;;
-            -w|--width) WIDTH="$2"; shift; shift ;;
-            *) POSITIONAL+=("$1"); shift ;;
-          esac
-        done
-        set -- "''${POSITIONAL[@]}"
-        WIDTH="''${WIDTH:-"$(stty size | cut -d' ' -f2)"}"
+    # min-width/max-width need to be compared in runtime
+    runShell =
+      let
+        isCustomWidthPresent = (config.settings.min-width != null || config.settings.max-width != null);
+        isNotWidthPresent = config.settings.width == null;
 
-        [[ "$WIDTH" -lt "${toString config.settings.min-width}" ]] &&
-          wrapperSetEnvDefault DFT_WIDTH ${toString config.settings.min-width}
-      ''
-    ];
+        minWidth = if isNull config.settings.min-width then 0 else config.settings.min-width;
+        maxWidth = if isNull config.settings.max-width then 0 else config.settings.max-width;
+      in
+      lib.mkIf (isCustomWidthPresent && isNotWidthPresent) [
+        # bash
+        ''
+          MIN_WIDTH=${toString minWidth}
+          MAX_WIDTH=${toString maxWidth}
+
+          POSITIONAL=()
+          while [[ $# -gt 0 ]]; do
+            key="$1"
+            case $key in
+              --width=*) WIDTH="$(echo "$1" | cut -d'=' -f2)"; shift;;
+              -w|--width) WIDTH="$2"; shift; shift ;;
+              *) POSITIONAL+=("$1"); shift ;;
+            esac
+          done
+          set -- "''${POSITIONAL[@]}"
+          WIDTH="''${WIDTH:-"$(stty size | cut -d' ' -f2)"}"
+
+          [[ $MIN_WIDTH -gt 0 ]] && [[ "$WIDTH" -lt "$MIN_WIDTH" ]] &&
+            wrapperSetEnvDefault DFT_WIDTH $MIN_WIDTH
+
+          [[ $MAX_WIDTH -gt 0 ]] && [[ "$WIDTH" -gt "$MAX_WIDTH" ]] &&
+            wrapperSetEnvDefault DFT_WIDTH $MAX_WIDTH
+        ''
+      ];
 
     meta.maintainers = [ wlib.maintainers.alexlov ];
   };
