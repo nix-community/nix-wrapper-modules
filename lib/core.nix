@@ -607,8 +607,7 @@ in
         use `config.passthru`, or `config.outputs` instead.
 
         Also cannot override `buildCommand`.
-        That is controlled by the `config.builderFunction`
-        and `config.sourceStdenv` options.
+        That is controlled by the `config.builderFunction` option.
       '';
     };
     binDir = lib.mkOption {
@@ -744,21 +743,39 @@ in
       type = wlib.types.dagOf lib.types.lines;
       default = { };
       description = ''
-        This option is to be used to fulfill the contract formed by `config.wrapperPaths`
+        This is the wrapper module replacement for the usual stdenv phases in a derivation such as `buildPhase`, `installPhase`, etc.
 
-        This option is used by builderFunction to create a build script which will be ran in the resulting derivation.
+        ```nix
+        config.buildCommand.somename = "some commands";
+        config.buildCommand.someothername = {
+          after = [ "runStdenvPhases" ];
+          before = [ "somename" ];
+          data = "some more commands before the other commands but after the stdenv phases";
+        };
+        ```
+
+        Unless your command requires you to say that it is `before` or `after` another phase due to depending on an artifact produced by it,
+        for example `after = [ "constructFiles" ];`, you do not need to specify when it is ran.
+
+        The result is used by `config.builderFunction` to create a build script which will be ran in the resulting derivation.
+
+        This option is to be used to fulfill the contract formed by `config.wrapperPaths`
 
         The relative path to the thing to wrap is `config.wrapperPaths.input`
 
         The result should be created at `config.wrapperPaths.placeholder`
 
         In most wrapper modules, this contract has been fulfilled for you by `wlib.modules.makeWrapper`
-        and `wlib.modules.symlinkScript`, which are imported by `wlib.modules.default`
+        which is imported by `wlib.modules.default`
 
         However, you may add extra entries, and place them before or after the commands provided by those modules.
 
-        This is a more flexible form of providing derivation build commands than the normal `drv.buildPhase` style options.
-        However, those are also usable, as are the other `drv` attributes such as things like `drv.__structuredAttrs`.
+        The stdenv phases are still offered under `config.drv` via `wlib.modules.stdenvPhases`, included in `wlib.modules.default`.
+
+        It is done in this manner because the normal model proved difficult to use in order to compose a collection
+        of often disconnected build commands provided across several modules.
+
+        The other `drv` attributes such as things like `config.drv.__structuredAttrs` work as normal.
       '';
     };
     builderFunction = lib.mkOption {
@@ -770,7 +787,7 @@ in
 
         This option takes a function receiving the following arguments:
 
-        module arguments + `buildCommand` + `pkgs.callPackage`
+        module arguments + `buildCommand` + `pkgs.callPackage` arguments
 
         `buildCommand` is the already sorted and concatenated result of the `config.buildCommand` DAG option,
         for convenience.
@@ -805,7 +822,7 @@ in
 
         Regardless of if you return a string or function,
         `passthru.wrap`, `passthru.apply`, `passthru.eval`, `passthru.extendModules`, `passthru.override`,
-        `passthru.overrideAttrs` will be added to the thing you return, and `config.sourceStdenv` will be handled for you.
+        and `passthru.overrideAttrs` will be added to the thing you return.
 
         However:
 
@@ -818,47 +835,24 @@ in
             __functor = {
               mkDerivation,
               __functor,
-              defaultPhases, # [ "<all stdenv phases>" ... ]
-              setupPhases, # phases: "if [ -z \"''${phases[*]:-}\" ]; then phases="etc..."; fi"
-              runPhases, # "for curPhase in ''${phases[*]}; do runPhase \"$curPhase\"; done"
               ...
             }@self:
             defaultArgs:
-            defaultArgs // {
-              buildCommand =
-                lib.optionalString config.sourceStdenv (setupPhases defaultPhases)
-                + buildCommand
-                + lib.optionalString config.sourceStdenv runPhases;
-            };
+            defaultArgs // { inherit buildCommand; };
           }
         ```
 
         - If you do this:
           - You are in control over the entire derivation.
-          - This means you need to take care of `config.passthru` and `config.sourceStdenv` yourself.
+          - This means you need to take care of `config.passthru` yourself.
           - The `mkDerivation` function will be called with the final result of your functor.
 
-        As you can see, you are provided with some things to help you via the `self` argument to your functor.
-
         The generated `passthru` items mentioned above are given to you as part of what is shown as defaultArgs above
-
-        And you are also given some helpers to help you run the phases if needed!
 
         Tip: A _functor_ is a set with a `{ __functor = self: args: ...; }` field.
         You can call it like a function and it gets passed itself as its first argument!
       '';
       default = { buildCommand, ... }: buildCommand;
-    };
-    sourceStdenv = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = ''
-        Run the enabled stdenv phases on the wrapper derivation.
-
-        NOTE: often you may prefer to use things like `drv.doDist = true;`,
-        or even `drv.phases = [ ... "buildPhase" etc ... ];` instead,
-        to override this choice in a more fine-grained manner
-      '';
     };
     wrapper = lib.mkOption {
       type = lib.types.package;
@@ -920,10 +914,6 @@ in
                   ];
                 };
             };
-            dontUnpack = true;
-            dontConfigure = true;
-            dontPatch = true;
-            dontFixup = true;
             name = package.name or "${package.pname or binName}-${version}";
             ${
               if builtins.isString (package.pname or binName) && package.pname or binName != "" then
@@ -935,33 +925,42 @@ in
             inherit version meta;
             inherit (config) outputs;
             outputName = config.outputName or "out";
-            buildPhase = ''
-              runHook preBuild
-              runHook postBuild
-            '';
-            installPhase = ''
-              runHook preInstall
-              runHook postInstall
-            '';
+            passAsFile = [
+              "buildCommand"
+            ]
+            ++ (if builtins.isList (config.drv.passAsFile or null) then config.drv.passAsFile else [ ]);
           }
           // removeAttrs config.drv [
+            "passAsFile"
             "passthru"
             "buildCommand"
             "outputs"
             "meta"
           ];
           errormsg = "config.builderFunction function must return (a string) or (a function that receives attrset and returns an attrset) or (a functor as described in https://nix-community.github.io/nix-wrapper-modules/core.html#builderfunction)";
+          deprecationMessage = ''
+            `nix-wrapper-modules` deprecation warning:
+
+            `setupPhases`, `defaultPhases`, and `runPhases` arguments from the functor form of `builderFunction` option have been deprecated!
+
+            Running of the stdenv phases has been moved into its own module `wlib.modules.stdenvPhases` which is included by `wlib.modules.default`.
+
+            The code which is to run those phases will be included already in the `buildCommand` argument passed to the `builderFunction`.
+
+            If you wish to have further control over which gets ran in your `builderFunction` value, you may still always access the raw `buildCommand` option value,
+            and sort or filter however you wish.
+
+            This value will be removed in May of 2027.
+          '';
+          # TODO: deprecated, remove in may 2027
           defaultPhases = [
-            "unpackPhase"
-            "patchPhase"
-            "configurePhase"
             "buildPhase"
             "checkPhase"
             "installPhase"
-            "fixupPhase"
             "installCheckPhase"
             "distPhase"
           ];
+          # TODO: deprecated, remove in may 2027
           setupPhases =
             phases:
             let
@@ -972,29 +971,22 @@ in
                   rest = builtins.substring 1 (builtins.stringLength s - 1) s;
                 in
                 lib.strings.toUpper first + rest;
+              phases = if builtins.isList phases then phases else defaultPhases;
             in
-            if builtins.isList phases then
-              (lib.pipe phases [
-                (builtins.concatMap (n: [
+            (lib.pipe phases [
+              (builtins.concatMap (
+                n:
+                lib.optionals (builtins.isString n && lib.isValidPosixName n) [
                   "\${pre${capitalize n}s[*]:-}"
                   "${n}"
-                ]))
-                (v: if builtins.length v > 0 then builtins.tail v else [ ])
-                (v: [ "\${prePhases[*]:-}" ] ++ v ++ [ "\${postPhases[*]:-}" ])
-                (builtins.concatStringsSep " ")
-                wlib.escapeShellArgWithEnv
-                (v: "\n" + ''if [ -z "''${phases[*]:-}" ]; then phases=${v}; fi'' + "\n")
-              ])
-            else
-              ''
-
-                if [ -z "''${phases[*]:-}" ]; then
-                    phases="''${prePhases[*]:-} unpackPhase patchPhase ''${preConfigurePhases[*]:-} \
-                        configurePhase ''${preBuildPhases[*]:-} buildPhase checkPhase \
-                        ''${preInstallPhases[*]:-} installPhase ''${preFixupPhases[*]:-} fixupPhase installCheckPhase \
-                        ''${preDistPhases[*]:-} distPhase ''${postPhases[*]:-}";
-                fi
-              '';
+                ]
+              ))
+              (v: [ "\${prePhases[*]:-}" ] ++ v ++ [ "\${postPhases[*]:-}" ])
+              (builtins.concatStringsSep " ")
+              (v: "\n" + ''if [ -z "''${phases[*]:-}" ]; then phases="${v}"; fi'' + "\n")
+              (lib.warn deprecationMessage)
+            ]);
+          # TODO: deprecated, remove in may 2027
           runPhases = ''
 
             for curPhase in ''${phases[*]}; do
@@ -1020,7 +1012,9 @@ in
                 if v ? mkDerivation then
                   v
                   // {
-                    inherit runPhases setupPhases defaultPhases;
+                    inherit setupPhases;
+                    runPhases = lib.warn deprecationMessage runPhases;
+                    defaultPhases = lib.warn deprecationMessage defaultPhases;
                     configuration = config;
                   }
                 else
@@ -1036,10 +1030,7 @@ in
                   // {
                     passthru = v.passthru or { } // defaultargs.passthru;
                     passAsFile = [ "buildCommand" ] ++ v.passAsFile or [ ];
-                    buildCommand =
-                      lib.optionalString config.sourceStdenv (setupPhases defaultPhases)
-                      + v.buildCommand or ""
-                      + lib.optionalString config.sourceStdenv runPhases;
+                    buildCommand = v.buildCommand or "";
                   }
                 else
                   throw errormsg
@@ -1049,10 +1040,7 @@ in
             defaultargs
             // {
               passAsFile = [ "buildCommand" ] ++ defaultargs.passAsFile or [ ];
-              buildCommand =
-                lib.optionalString config.sourceStdenv (setupPhases defaultPhases)
-                + initial
-                + lib.optionalString config.sourceStdenv runPhases;
+              buildCommand = initial;
             }
           else
             throw errormsg

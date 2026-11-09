@@ -234,7 +234,5 @@
     Outside the module, you can also get the path with `"''${yourWrappedPackage.configuration.constructFiles.<name>}"`
 
     Imported by `wlib.modules.default`
-
-    ---
   '';
 }

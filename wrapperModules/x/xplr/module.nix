@@ -230,7 +230,7 @@ in
       '';
     };
   };
-  config.drv.buildPhase =
+  config.buildCommand.linkXplrPlugins =
     let
       errORname =
         name:
@@ -254,9 +254,8 @@ in
       ];
     in
     /* bash */ ''
-      runHook preBuild
+      mkdir -p ${lib.escapeShellArg basePluginDir}
       ${linkCommands}
-      runHook postBuild
     '';
   config.prefixVar =
     let
