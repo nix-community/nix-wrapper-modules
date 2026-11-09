@@ -166,7 +166,7 @@ inputs:
   };
 
   # These are from the tips and tricks section of the neovim wrapper docs!
-  # https://birdeehub.github.io/nix-wrapper-modules/neovim.html#tips-and-tricks
+  # https://nix-community.github.io/nix-wrapper-modules/neovim.html#tips-and-tricks
   # We could put these in another module and import them here instead!
 
   # This submodule modifies both levels of your specs

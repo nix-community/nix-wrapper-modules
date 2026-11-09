@@ -14,7 +14,7 @@
     {
       _file = ./module.nix;
       options.pluginDeps = lib.mkOption {
-        default = parentSpec.parentSpec or "startup";
+        default = parentSpec.pluginDeps or "startup";
         type = lib.types.enum [
           false
           "startup"

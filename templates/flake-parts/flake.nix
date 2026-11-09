@@ -4,7 +4,7 @@
 
     `wrappers`, `wrapperModules` and `packages.*.*`
   '';
-  inputs.wrappers.url = "github:BirdeeHub/nix-wrapper-modules";
+  inputs.wrappers.url = "github:nix-community/nix-wrapper-modules";
   inputs.wrappers.inputs.nixpkgs.follows = "nixpkgs";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";

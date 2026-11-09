@@ -42,19 +42,6 @@ in
 {
   imports = [ wlib.modules.default ];
   options = {
-    scripts = lib.mkOption {
-      type = lib.types.listOf lib.types.package;
-      default = [ ];
-      internal = true;
-      apply =
-        x:
-        lib.warnIf (x != [ ])
-          "nix-wrapper-modules#mpv deprecation warning: `config.scripts` is deprecated, use `config.script.<name>.path = pkgs.mpvScripts.<name>` instead"
-          x;
-      description = ''
-        deprecated: use `config.script.<name>.path = pkgs.mpvScripts.<name>`
-      '';
-    };
     script = lib.mkOption {
       type = lib.types.attrsOf (
         lib.types.submodule (
@@ -322,17 +309,15 @@ in
 
   config.passthru.generatedConfig = dirOf config.constructFiles.generatedConfig.outPath;
 
-  config.overrides =
-    lib.mkIf (config.scripts or [ ] != [ ] || partitioned.nixpkgsScripts or [ ] != [ ])
-      [
-        {
-          name = "MPV_SCRIPTS";
-          type = "override";
-          data = prev: {
-            scripts = (prev.scripts or [ ]) ++ config.scripts ++ partitioned.nixpkgsScripts;
-          };
-        }
-      ];
+  config.overrides = lib.mkIf (partitioned.nixpkgsScripts or [ ] != [ ]) [
+    {
+      name = "MPV_SCRIPTS";
+      type = "override";
+      data = prev: {
+        scripts = (prev.scripts or [ ]) ++ partitioned.nixpkgsScripts;
+      };
+    }
+  ];
   config.package = lib.mkDefault pkgs.mpv;
   config.meta.maintainers = [ wlib.maintainers.birdee ];
 }

@@ -119,7 +119,7 @@
   };
   config.meta.maintainers = [ wlib.maintainers.birdee ];
   config.meta.description = ''
-    Adds extra options compared to the default `builderFunction` option value.
+    Mirrors the original derivation contents into the final wrapper derivation, and gives some patching options.
 
     Imported by `wlib.modules.default`
 

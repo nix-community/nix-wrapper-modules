@@ -6,7 +6,27 @@
   ...
 }:
 let
-  iniFmt = pkgs.formats.ini { };
+  iniOptions = {
+    listsAsDuplicateKeys = true;
+    mkKeyValue =
+      with lib.generators;
+      mkKeyValueDefault {
+        mkValueString =
+          v:
+          mkValueStringDefault { } (
+            if v == true then
+              "yes"
+            else if v == false then
+              "no"
+            else if v == null then
+              "none"
+            else
+              v
+          );
+      } "=";
+  };
+
+  iniFmt = pkgs.formats.ini iniOptions;
 in
 {
   imports = [ wlib.modules.default ];
@@ -22,7 +42,7 @@ in
   };
   config.flags."--config" = config.constructFiles.generatedConfig.path;
   config.constructFiles.generatedConfig = {
-    content = lib.generators.toINI { } config.settings;
+    content = lib.generators.toINI iniOptions config.settings;
     relPath = "${config.binName}.ini";
   };
   config.filesToPatch = [ "share/systemd/user/*.service" ];

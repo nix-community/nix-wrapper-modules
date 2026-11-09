@@ -19,7 +19,8 @@ let
                 res = lib.fix v;
               in
               lib.optionalString (res ? type) "(${toString res.type})"
-              + lib.optionalString (res ? content) "${toJSON res.content}"
+              + lib.optionalString (res ? content && !res ? custom) "${toJSON res.content}"
+              + lib.optionalString (res ? custom) res.custom
             else if isAttrs v || isList v then
               toJSON (toJSON v)
             else

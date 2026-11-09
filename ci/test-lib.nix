@@ -33,28 +33,38 @@ let
 
   toSanitizedJSON =
     value:
-    if builtins.isAttrs value then
-      builtins.toJSON (
-        lib.mapAttrsRecursive (
-          path: v:
-          if builtins.isFunction v then
-            let
-              res = builtins.unsafeGetAttrPos (lib.last path) (
-                lib.getAttrFromPath (lib.sublist 0 (builtins.length path - 1) path) value
-              );
-            in
-            "<lambda${
-              if builtins.isAttrs res then
-                ":${res.file or ""}:${toString (res.line or "")}:${toString (res.column or "")}"
-              else
-                ""
-            }>"
-          else
-            v
-        ) value
-      )
-    else
-      builtins.toJSON value;
+    let
+      sanitize =
+        in_list: parentAttrs: name: v:
+        # intentionally ignores and recurses into functors
+        if builtins.isFunction v then
+          let
+            res =
+              if parentAttrs == null || name == null then null else builtins.unsafeGetAttrPos name parentAttrs;
+            args = builtins.functionArgs v;
+          in
+          "<lambda${
+            lib.optionalString (builtins.isAttrs res) "${
+              if in_list then " in list at " else ":"
+            }${res.file or ""}:${toString (res.line or "")}:${toString (res.column or "")}"
+            +
+              lib.optionalString (args != { })
+                "; with arguments ${
+                  lib.pipe args [
+                    (lib.mapAttrsToList (n: v: "`${n}${lib.optionalString v "?"}`"))
+                    (builtins.concatStringsSep ", ")
+                  ]
+                }"
+          }>"
+        else if builtins.isList v then
+          map (sanitize true parentAttrs name) v
+        # lets builtins.toJSON handle derivations
+        else if builtins.isAttrs v && !lib.isStringLike v then
+          lib.mapAttrs (sanitize false v) v
+        else
+          v;
+    in
+    builtins.toJSON (sanitize false null null value);
 
   render =
     node:
@@ -201,7 +211,7 @@ in
             The first argument must be either a string (the test name) or an attrs
             with at least one of the keys 'name' or 'wrapper', but got:
 
-            ${lib.toSanitizedJSON settings}
+            ${toSanitizedJSON settings}
           '';
       wrapperName = settings.wrapper or null;
       platforms =
@@ -215,7 +225,7 @@ in
             The provided wrapper '${wrapperName}' was not found.
             Available wrappers are:
 
-            ${lib.toSanitizedJSON (lib.attrNames self.wrappers)}
+            ${toSanitizedJSON (lib.attrNames self.wrappers)}
           '';
       enabled =
         (settings.enable or true)
@@ -366,14 +376,11 @@ in
     in
     {
       cond = if equal then "true" else "false";
-      msg =
-        if !equal then
-          ''
-            Expected:
-              ${toSanitizedJSON expected}
-            but got:
-              ${toSanitizedJSON actual}''
-        else
-          "This should never happen.";
+      msg = ''
+        Expected:
+          ${toSanitizedJSON expected}
+        but got:
+          ${toSanitizedJSON actual}
+      '';
     };
 }

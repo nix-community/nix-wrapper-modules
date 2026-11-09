@@ -294,4 +294,4 @@ Why specify this? I was having trouble figuring out what to title my commits. So
 
 ## Questions?
 
-The [github discussions board](https://github.com/BirdeeHub/nix-wrapper-modules/discussions) is open and a great place to find help!
+The [github discussions board](https://github.com/nix-community/nix-wrapper-modules/discussions) is open and a great place to find help!

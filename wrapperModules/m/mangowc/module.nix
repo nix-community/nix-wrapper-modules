@@ -5,8 +5,14 @@
   pkgs,
   ...
 }:
+let
+  oldConfigKeys = builtins.compareVersions config.package.version "0.18.0" < 0;
+in
 {
-  imports = [ wlib.modules.default ];
+  imports = [
+    wlib.modules.default
+    wlib.modules.systemd
+  ];
 
   options =
     let
@@ -47,8 +53,8 @@
           configuration syntax. Nested attributes are flattened with underscore separators.
           For example: `animation.duration_open = 400` becomes `animation_duration_open = 400`
 
-          Keymodes (submaps) are supported via the special `keymode` attribute. Each keymode
-          is a nested attribute set under `keymode` that contains its own bindings.
+          Keymodes (submaps) are supported via the special `key_mode` attribute. Each key_mode
+          is a nested attribute set under `key_mode` that contains its own bindings.
         '';
         example = literalExpression ''
           {
@@ -75,7 +81,7 @@
               close = "0.08,0.92,0,1";
             };
 
-            # Use lists for duplicate keys like bind and tagrule
+            # Use lists for duplicate keys like bind and tag_rule
             bind = [
               "SUPER,r,reload_config"
               "Alt,space,spawn,rofi -show drun"
@@ -83,13 +89,13 @@
               "ALT,R,setkeymode,resize"  # Enter resize mode
             ];
 
-            tagrule = [
+            tag_rule = [
               "id:1,layout_name:tile"
               "id:2,layout_name:scroller"
             ];
 
             # Keymodes (submaps) for modal keybindings
-            keymode = {
+            key_mode = {
               resize = {
                 bind = [
                   "NONE,Left,resizewin,-10,0"
@@ -140,7 +146,7 @@
           Shell script to run on mango startup. No shebang needed.
 
           When this option is set, the script will be written to
-          `~/.config/mango/autostart.sh` and an `exec-once` line
+          `~/.config/mango/autostart.sh` and an `exec_once` line
           will be automatically added to the config to execute it.
         '';
         type = types.lines;
@@ -188,10 +194,25 @@
         '';
       };
 
-      extraContent = mkOption {
-        type = types.lines;
-        default = "";
-        internal = true;
+      hotReload.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = oldConfigKeys;
+        description = ''
+          Mango 0.15 is required for this functionality.
+
+          Mango 0.18 makes this setting unnecessary, because it adds a new setting, `config.settings.auto_reload_config = 1`;
+
+          When `true`, which is the default for versions of mango < 0.18, the wrapper will generate a mango-reload systemd service which will reload mango with the new config on rebuild.
+
+          Note: You have to start the mango-reload.service yourself.
+          For Example:
+          ```nix
+            systemd.packages = [ config.wrappers.mango.wrapper ];
+            wrappers.mango.settings.exec_once = [ # NOTE: before mango 0.18.0, exec_once was named exec-once
+              "systemctl --user start mango-reload.service"
+            ];
+          ```
+        '';
       };
     };
 
@@ -210,6 +231,13 @@
           config.configFile.content
         else
           let
+            checkedSettings =
+              if config.settings.keymode or null != null then
+                lib.warnIf (!oldConfigKeys)
+                  "config.settings.keymode for mango window manager wrapper is deprecated, use config.settings.key_mode instead.\nFor more info on what keys in config.settings may have changed, see https://github.com/mangowm/mango/releases/tag/0.18.0"
+                  (removeAttrs config.settings [ "keymode" ] // { key_mode = config.settings.keymode; })
+              else
+                config.settings;
             settingsString =
               let
                 inherit (import ./lib.nix lib) toMango;
@@ -217,28 +245,27 @@
               toMango {
                 topCommandsPrefixes = config.topPrefixes;
                 bottomCommandsPrefixes = config.bottomPrefixes;
-              } config.settings;
+                oldKeymode = oldConfigKeys;
+              } checkedSettings;
             isImpurePath = s: builtins.isString s && !builtins.hasContext s;
             sourcedFileToSourceExpression =
               sourcedFile:
-              if isImpurePath sourcedFile then "source-optional=${sourcedFile}" else "source=${sourcedFile}";
-            extraConfig =
-              if config.extraContent or "" != "" then
-                lib.warn "wrapperModules.mangowc: config.extraContent is deprecated, please use config.extraConfig instead" (
-                  config.extraContent
-                )
+              if isImpurePath sourcedFile then
+                "${if oldConfigKeys then "source-optional" else "source_optional"}=${sourcedFile}"
               else
-                config.extraConfig;
+                "source=${sourcedFile}";
           in
           (lib.strings.concatMapStringsSep "\n" sourcedFileToSourceExpression config.sourcedFiles)
           + "\n"
           + settingsString
           + "\n"
-          + extraConfig
+          + config.extraConfig
           + "\n"
-          + lib.optionalString (
-            config.autostart_sh != ""
-          ) "\nexec-once=${config.constructFiles.autostart_sh.path}\n";
+          +
+            lib.optionalString (config.autostart_sh != "")
+              "\n${
+                if oldConfigKeys then "exec-once" else "exec_once"
+              }=${config.constructFiles.autostart_sh.path}\n";
     };
 
     constructFiles.autostart_sh = {
@@ -249,8 +276,19 @@
       '';
     };
 
+    systemd.user.service.mangoReloadConfig = lib.mkIf config.hotReload.enable {
+      Service = {
+        Type = "oneshot";
+        RemainAfterExit = "yes";
+        ExecStart = "${lib.getExe' pkgs.coreutils "true"}";
+        ExecReload = "${lib.getExe' config.package "mmsg"} dispatch load_config_file,${config.constructFiles.generatedConfig.path}";
+        X-ReloadIfChanged = true;
+      };
+      Unit.X-Reload-Triggers = [ config.constructFiles.generatedConfig.path ];
+    };
+
     flags."-c" = config.configFile.path;
-    package = lib.mkDefault pkgs.mangowc;
+    package = lib.mkDefault (pkgs.mangowc or pkgs.mango);
     passthru.providedSessions = config.package.passthru.providedSessions;
 
     meta.platforms = lib.platforms.linux;

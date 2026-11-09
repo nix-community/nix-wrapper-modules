@@ -21,6 +21,8 @@ in
 
   types = import ./types.nix { inherit lib wlib; };
 
+  docs = import ./docs { inherit lib wlib; };
+
   dag = import ./dag.nix { inherit lib wlib; };
 
   makeWrapper = import ./makeWrapper { inherit lib wlib; };
@@ -141,7 +143,7 @@ in
     # in a nixos module
     { ... }: {
       imports = [
-        (installModule { name = "?"; value = someWrapperModule; })
+        (getInstallModule { name = "?"; value = someWrapperModule; })
       ];
       config.wrappers."?" = {
         enable = true;
@@ -154,7 +156,7 @@ in
     # in a home-manager module
     { ... }: {
       imports = [
-        (installModule { name = "?"; value = someWrapperModule; })
+        (getInstallModule { name = "?"; value = someWrapperModule; })
       ];
       config.wrappers."?" = {
         enable = true;
@@ -303,9 +305,11 @@ in
 
     environment variable expansion (e.g., `$HOME`, `${VAR}`).
 
-    Caution! This is best used by the `nix` backend for `wlib.modules.makeWrapper` to escape things,
+    This is best used by the `nix` backend for `wlib.modules.makeWrapper` to escape things,
     because the `shell` and `binary` implementations pass their args to `pkgs.makeWrapper` at **build** time,
     so allowing variable expansion may not always do what you expect!
+
+    Caution! It is not subshell-aware, and thus must be used with caution if subshell expansion is likely.
 
     - Example:
 
@@ -801,82 +805,4 @@ in
   */
   ignoreSpecField = lib.mkIf false null;
 
-  mkInstallModule =
-    lib.warn
-      ''
-        mkInstallModule deprecated: use `installModule`, or grab `flake.wrappers.<name>.install` (or any other method of setting `config.install.optionLocation` and retrieving that value)
-
-        This function will be removed on August 31, 2026
-      ''
-      (
-        {
-          optloc ? [ "wrappers" ],
-          loc ? [
-            "environment"
-            "systemPackages"
-          ],
-          as_list ? true,
-          name,
-          value,
-          ...
-        }@args:
-        {
-          pkgs ? null,
-          lib,
-          config,
-          ...
-        }:
-        # https://github.com/NixOS/nixpkgs/blob/c171bfa97744c696818ca23d1d0fc186689e45c7/lib/modules.nix#L615C1-L623C25
-        builtins.intersectAttrs {
-          _class = null;
-          _file = null;
-          key = null;
-          disabledModules = null;
-          imports = null;
-          meta = null;
-          freeformType = null;
-        } args
-        // {
-          options = lib.setAttrByPath (optloc ++ [ name ]) (
-            lib.mkOption {
-              default = { };
-              description = ''
-                wrapper module for `${name}` as a submodule option
-              '';
-              type = wlib.types.subWrapperModule (
-                (lib.toList value)
-                ++ [
-                  {
-                    _file = ./lib.nix;
-                    config.pkgs = lib.mkIf (pkgs != null) pkgs;
-                    options.enable = lib.mkEnableOption name;
-                  }
-                ]
-              );
-            }
-          );
-          config = lib.setAttrByPath loc (
-            lib.mkIf
-              (lib.getAttrFromPath (
-                optloc
-                ++ [
-                  name
-                  "enable"
-                ]
-              ) config)
-              (
-                let
-                  res = lib.getAttrFromPath (
-                    optloc
-                    ++ [
-                      name
-                      "wrapper"
-                    ]
-                  ) config;
-                in
-                if as_list then [ res ] else res
-              )
-          );
-        }
-      );
 }

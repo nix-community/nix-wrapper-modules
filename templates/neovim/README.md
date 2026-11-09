@@ -1,8 +1,8 @@
 # Neovim module
 
-This is a demonstration of the [neovim module](https://birdeehub.github.io/nix-wrapper-modules/wrapperModules/neovim.html)
+This is a demonstration of the [neovim module](https://nix-community.github.io/nix-wrapper-modules/wrapperModules/neovim.html)
 
-It makes use of the tips in the [tips and tricks](https://birdeehub.github.io/nix-wrapper-modules/wrapperModules/neovim.html#tips-and-tricks) section of the documentation.
+It makes use of the tips in the [tips and tricks](https://nix-community.github.io/nix-wrapper-modules/wrapperModules/neovim.html#tips-and-tricks) section of the documentation.
 
 This template configuration is by no means a perfect, complete configuration.
 
@@ -30,7 +30,7 @@ You may also decide you don't need lazy loading at all. This is fine, many plugi
 To initialize this template flake into the current directory, run:
 
 ```bash
-nix flake init -t github:BirdeeHub/nix-wrapper-modules#neovim
+nix flake init -t github:nix-community/nix-wrapper-modules#neovim
 ```
 
 It will not replace existing files.
@@ -55,14 +55,14 @@ inputs: # <-- get the library somehow
 }
 ```
 
-There are a lot of other ways to install it as well, see [the getting started documentation](https://birdeehub.github.io/nix-wrapper-modules/md/getting-started.html)
+There are a lot of other ways to install it as well, see [the getting started documentation](https://nix-community.github.io/nix-wrapper-modules/md/getting-started.html)
 
 You may also wish to view the `flake.nix` of this template, as it demonstrates some of those things when setting up its outputs.
 
 ---
 
 The nix in this template is not as simple as it could possibly be, as it demonstrates some things
-from the [tips and tricks](https://birdeehub.github.io/nix-wrapper-modules/wrapperModules/neovim.html#tips-and-tricks) section of the documentation.
+from the [tips and tricks](https://nix-community.github.io/nix-wrapper-modules/wrapperModules/neovim.html#tips-and-tricks) section of the documentation.
 
 If you wanted as simple as possible, you could use something more like the following as your `module.nix`
 

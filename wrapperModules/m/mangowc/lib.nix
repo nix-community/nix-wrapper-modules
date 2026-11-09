@@ -7,7 +7,6 @@ let
     foldl
     generators
     partition
-    removeAttrs
     ;
 
   inherit (lib.strings)
@@ -121,7 +120,7 @@ let
           "Alt,space,spawn,rofi -show drun"
           "Alt,Return,spawn,foot"
         ];
-        tagrule = [
+        tag_rule = [
           "id:1,layout_name:tile"
           "id:2,layout_name:scroller"
         ];
@@ -134,8 +133,8 @@ let
     bind = SUPER,r,reload_config
     bind = Alt,space,spawn,rofi -show drun
     bind = Alt,Return,spawn,foot
-    tagrule = id:1,layout_name:tile
-    tagrule = id:2,layout_name:scroller
+    tag_rule = id:1,layout_name:tile
+    tag_rule = id:2,layout_name:scroller
     ```
 
     ## Using keymodes (submaps)
@@ -147,7 +146,7 @@ let
           "SUPER,Q,killclient"
           "ALT,R,setkeymode,resize"
         ];
-        keymode = {
+        key_mode = {
           resize = {
             bind = [
               "NONE,Left,resizewin,-10,0"
@@ -165,7 +164,7 @@ let
     bind = SUPER,Q,killclient
     bind = ALT,R,setkeymode,resize
 
-    keymode = resize
+    key_mode = resize
     bind = NONE,Left,resizewin,-10,0
     bind = NONE,Right,resizewin,10,0
     bind = NONE,Escape,setkeymode,default
@@ -177,6 +176,7 @@ let
     {
       topCommandsPrefixes ? [ ],
       bottomCommandsPrefixes ? [ ],
+      oldKeymode ? false,
     }:
     attrs:
     let
@@ -191,18 +191,18 @@ let
             indent = ""; # No indent, since we don't have nesting
           };
 
-          # Extract keymode definitions if they exist
-          keymodes = attrs.keymode or { };
-          attrsWithoutKeymodes = removeAttrs attrs [ "keymode" ];
+          # Extract key_mode definitions if they exist
+          keymodes = attrs.key_mode or { };
+          attrsWithoutKeymodes = removeAttrs attrs [ "key_mode" ];
 
-          # Generate keymode blocks
-          # Format: keymode=name\nbind=...\nbind=...\n
+          # Generate key_mode blocks
+          # Format: key_mode=name\nbind=...\nbind=...\n
           mkKeymodeBlock =
             name: modeAttrs:
             let
               modeCommands = flattenAttrs (p: k: "${p}_${k}") modeAttrs;
             in
-            "keymode = ${name}\n${mkCommands modeCommands}";
+            "${if oldKeymode then "keymode" else "key_mode"} = ${name}\n${mkCommands modeCommands}";
 
           keymodeBlocks =
             if keymodes == { } then

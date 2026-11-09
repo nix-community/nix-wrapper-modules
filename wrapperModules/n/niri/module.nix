@@ -61,21 +61,12 @@ let
     );
 in
 {
-  imports = [ wlib.modules.default ];
+  imports = [
+    wlib.modules.default
+    wlib.modules.systemd
+  ];
 
   options = {
-    v2-settings = lib.mkOption {
-      type = lib.types.nullOr lib.types.bool;
-      default = null;
-      internal = true;
-      apply =
-        x:
-        lib.warnIf (x != null) ''
-          nix-wrapper-modules niri v2-settings option no longer has any effect!
-          `v2-settings == true` is now the default behaviour, and the deprecations for v1 have been removed.
-          You should remove `v2-settings = true` from your config, this option will be removed in a future version.
-        '';
-    };
     settings = lib.mkOption {
       description = ''
         Niri configuration settings.
@@ -163,6 +154,7 @@ in
                 matches = [ { app-id = ".*"; } ];
                 excludes = [
                   { app-id = "org.keepassxc.KeePassXC"; }
+                  { app-id = _: { custom = ''r#"^org\.telegram\.desktop$"#''; }; }
                 ];
                 open-focused = false;
                 open-floating = false;
@@ -311,6 +303,7 @@ in
   };
   config.filesToPatch = [
     "share/applications/*.desktop"
+    "lib/systemd/user/niri.service"
     "share/systemd/user/niri.service"
   ];
   # NOTE: gives users a nice error message about invalid configs, with actual knowledge of niri's config format
@@ -353,21 +346,13 @@ in
         + "\n"
         + config.settings.extraConfig;
   };
-  config.buildCommand.niriReloadConfig =
-    lib.mkIf (!config.disableConfigHotReload && lib.versionAtLeast config.package.version "26.04")
-      {
-        after = [ "symlinkScript" ];
-        data = ''
-          chmod +w ${placeholder config.outputName}/share/systemd/user/niri.service
-          cat >> ${placeholder config.outputName}/share/systemd/user/niri.service<<EOF
-          [Unit]
-          X-Reload-Triggers=${config.constructFiles.generatedConfig.path}
-          [Service]
-          ExecReload=${lib.getExe config.package} msg action load-config-file --path ${config.constructFiles.generatedConfig.path}
-          X-ReloadIfChanged=true
-          EOF
-        '';
-      };
+  config.systemd.user.service.niri = lib.mkIf (!config.disableConfigHotReload) {
+    Unit.X-Reload-Triggers = [ "${config.constructFiles.generatedConfig.path}" ];
+    Service = {
+      ExecReload = "${lib.getExe config.package} msg action load-config-file --path ${config.constructFiles.generatedConfig.path}";
+      X-ReloadIfChanged = true;
+    };
+  };
   config.meta.maintainers = [
     wlib.maintainers.patwid
   ];

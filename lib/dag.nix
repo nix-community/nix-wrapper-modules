@@ -69,6 +69,7 @@ let
           dataOptFn = if isFunction (settings.dataOptFn or null) then settings.dataOptFn else dataOptFn;
           defaultNameFn =
             if isFunction (settings.defaultNameFn or null) then settings.defaultNameFn else null;
+          readOnlyName = if isBool (settings.readOnlyName or null) then settings.readOnlyName else false;
           isDal = if isBool (settings.isDal or null) then settings.isDal else false;
         })
       ]
@@ -84,6 +85,7 @@ in
           Function to compute the default `name` for entries. Recieves the submodule arguments.
         - `dataTypeFn` ? `(elemType: { config, name, isDal, ... }@moduleArgs: elemType)`:
           Can be used if the type of the `data` field needs to depend upon the submodule arguments.
+        - `readOnlyName` ? `false`: sets readOnly for the `name` option for the spec.
         - ...other arguments for `wlib.types.specWith` (`modules`, `specialArgs`, etc...)
           Passed through to configure submodules in the DAG entries.
 
@@ -108,6 +110,7 @@ in
           Function to compute the default `name` for entries. Recieves the submodule arguments.
         - `dataTypeFn` ? `(elemType: { config, name, isDal, ... }@moduleArgs: elemType)`:
           Can be used if the type of the `data` field needs to depend upon the submodule arguments.
+        - `readOnlyName` ? `false`: sets readOnly for the `name` option for the spec.
         - ...other arguments for `wlib.types.specWith` (`modules`, `specialArgs`, etc...)
           Passed through to configure submodules in the DAG entries.
 
@@ -146,6 +149,7 @@ in
     {
       dataOptFn,
       defaultNameFn ? { name, isDal, ... }@moduleArgs: if isDal then null else name,
+      readOnlyName ? false,
       isDal ? false,
     }@settings:
     { name, isDal, ... }@args:
@@ -156,6 +160,7 @@ in
         name = mkOption {
           internal = true;
           type = types.nullOr types.str;
+          ${if readOnlyName == true then "readOnly" else null} = true;
           default =
             if isFunction defaultNameFn then
               defaultNameFn args

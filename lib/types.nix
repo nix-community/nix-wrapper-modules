@@ -154,6 +154,16 @@ in
     - Setting `freeformType` allows entries to have **unchecked** extra attributes.
       If your item is a set, and might contain your main field,
       you will want to avoid this to avoid false positives.
+
+    When overriding ONLY a spec value which is NOT the main field of that spec, by setting just that value from another module, it will not recognize that as a spec.
+
+    This is because it recognizes a spec by the presence of the main field and the absence of undeclared names.
+
+    To fix this, there are 2 options.
+
+    You may use [`wlib.ignoreSpecField`](https://nix-community.github.io/nix-wrapper-modules/lib/wlib.html#function-library-wlib.ignoreSpecField)
+
+    If your main field cannot contain a function, you may set `dontConvertFunctions` to true and pass the submodule in function form, setting just that value.
   */
   specWith = import ./specWith.nix lib;
 
@@ -190,7 +200,7 @@ in
     will be normalized such that all items are DAG entries
 
     If you wish to alter the type, you may provide different options
-    to `wlib.dag.dalWith` by updating this type `wlib.types.dalOf // { strict = false; }`
+    to `wlib.dag.dalWith` by updating this type `wlib.types.dalOf // { dontConvertFunctions = true; }`
 
     You can further modify the type with type merging!
     Redefine the option with the type `lib.types.listOf (wlib.types.spec ({ your module here }))`
@@ -225,7 +235,7 @@ in
     will be normalized such that all items are DAG entries
 
     If you wish to alter the type, you may provide different options
-    to `wlib.dag.dagWith` by updating this type `wlib.types.dagOf // { strict = false; }`
+    to `wlib.dag.dagWith` by updating this type `wlib.types.dagOf // { dontConvertFunctions = true; }`
 
     You can further modify the type with type merging!
     Redefine the option with the type `lib.types.attrsOf (wlib.types.spec ({ your module here }))`
@@ -403,7 +413,6 @@ in
       lib.types.str.check x && builtins.match "[ \t\n]*" x == null && builtins.match "[^\n\r]*" != null;
     inherit (lib.types.str) merge;
   };
-  nonEmptyline = lib.warn "`wlib.types.nonEmptyline` is deprecated due to having a mistake in its name, use `wlib.types.nonEmptyLine`" wlib.types.nonEmptyLine;
 
   /**
     Arguments:
@@ -546,9 +555,9 @@ in
     Creates a value type suitable for serialization formats.
 
     Parameters:
-    - typeName: String describing the format (e.g. "JSON", "YAML", "XML")
-    - nullable: Whether the structured value type allows `null` values.
-    - extraValueTypes: List of extra value types to allow, e.g. "[ lib.types.luaInline ]"
+    - typeName: String describing the format (e.g. "JSON", "YAML", "XML"). Required.
+    - nullable: Whether the structured value type allows `null` values. Defaults to `true`.
+    - extraValueTypes: List of extra value types to allow, e.g. "[ lib.types.luaInline ]". Defaults to `[]`.
 
     Returns a type suitable for structured data formats that supports:
     - Basic types: boolean, integer, float, string, path

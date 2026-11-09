@@ -71,7 +71,9 @@ in
       "share/dbus-1/services/com.mitchellh.ghostty.service"
       "share/systemd/user/app-com.mitchellh.ghostty.service"
     ];
-    package = lib.mkDefault (if pkgs.stdenv.isDarwin then pkgs.ghostty-bin else pkgs.ghostty);
+    package = lib.mkDefault (
+      if pkgs.stdenv.hostPlatform.isDarwin then pkgs.ghostty-bin else pkgs.ghostty
+    );
     constructFiles.ghosttyConfig = {
       content = toGhosttyConf config.settings;
       relPath = "${config.binName}-config";
@@ -80,6 +82,13 @@ in
       "--config-default-files=false"
       "--config-file=${config.constructFiles.ghosttyConfig.path}"
     ];
+    wrapperVariants.ghostty = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+      wrapperImplementation = "binary";
+      mirror = false;
+      package = placeholder "out";
+      exePath = lib.removePrefix "/" config.wrapperPaths.relPath;
+      binDir = "Applications/Ghostty.app/Contents/MacOS";
+    };
     # Ghostty has no environment variable for specifying a config file, so CLI
     # flags are the only option: --config-default-files=false prevents loading
     # the host's ~/.config/ghostty/config (including on machines where one
