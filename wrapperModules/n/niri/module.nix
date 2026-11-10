@@ -73,7 +73,7 @@ in
         See <https://yalter.github.io/niri/Configuration%3A-Introduction.html>
 
         This is a freeform submodule. If you do not see your option listed,
-        try setting it using the format specified by `wlib.toKdl`
+        try setting it using the format specified by `wlib.generators.toKdl`
       '';
       default = { };
       type = lib.types.submodule {
@@ -230,7 +230,7 @@ in
         Allows for auto translated kdl values for options not included in `config.settings`,
         but for which repeated definitions are significant.
 
-        Syntax for this option is the list form for the `wlib.toKdl` function
+        Syntax for this option is the list form for the `wlib.generators.toKdl` function
       '';
       example = lib.literalMD ''
         ```nix
@@ -320,7 +320,7 @@ in
       if config."config.kdl".content or "" != "" then
         config."config.kdl".content
       else
-        wlib.toKdl (_: {
+        wlib.generators.toKdl (_: {
           version = 1;
           content = builtins.concatLists [
             (map (mkRule "window-rule") config.settings.window-rules)

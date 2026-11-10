@@ -5,7 +5,7 @@
 }:
 let
   lib = pkgs.lib;
-  toKdl = self.lib.toKdl;
+  toKdl = self.lib.generators.toKdl;
 
   assertions = [
     {
