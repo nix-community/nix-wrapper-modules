@@ -1,0 +1,10 @@
+* @BirdeeHub
+/.github/ @BirdeeHub
+/.github/CODEOWNERS @BirdeeHub
+/ci/ @BirdeeHub
+/ci/docs/ @zenoli @BirdeeHub
+/lib/ @BirdeeHub
+/modules/ @BirdeeHub
+/wrapperModules/ @zenoli @BirdeeHub
+/wrapperModules/n/neovim/ @BirdeeHub
+/maintainers/ @zenoli @BirdeeHub
