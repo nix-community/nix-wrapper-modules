@@ -42,7 +42,11 @@
         name = "Getting Started";
         data = "numbered";
         path = "md/getting-started.md";
-        src = ./md/getting-started.md;
+        src = "${placeholder "generated"}/getting-started.md";
+        build = ''
+          cat ${./md/getting-started.md} > "$generated/getting-started.md"
+          jq -r '.flake_parts_docs' "$NIX_ATTRS_JSON_FILE" >> "$generated/getting-started.md"
+        '';
       }
       {
         name = "Lib Functions";

@@ -2,7 +2,7 @@
   description = ''
     Uses flake-parts to set up the flake outputs:
 
-    `wrappers`, `wrapperModules` and `packages.*.*`
+    `wrappers.*`, `wrapperModules.*` and `packages.*.*`
   '';
   inputs.wrappers.url = "github:nix-community/nix-wrapper-modules";
   inputs.wrappers.inputs.nixpkgs.follows = "nixpkgs";
@@ -20,22 +20,17 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ wrappers.flakeModules.wrappers ];
       systems = nixpkgs.lib.platforms.all;
-
-      perSystem =
-        { pkgs, ... }:
+      flake.wrappers.default =
         {
-          # wrappers.pkgs = pkgs; # choose a different `pkgs`
-          wrappers.control_type = "exclude"; # | "build"  (default: "exclude")
-          wrappers.packages = {
-            hello = true; # <- set to true to exclude from being built into `packages.*.*` flake output
-          };
-        };
-      flake.wrappers.hello = ./hello.nix;
-      flake.wrappers.tmux =
-        { wlib, pkgs, ... }:
+          wlib,
+          pkgs,
+          lib,
+          config,
+          ...
+        }:
         {
-          imports = [ wlib.wrapperModules.tmux ];
-          plugins = with pkgs.tmuxPlugins; [ onedark-theme ];
+          imports = [ wlib.modules.default ];
+          config.package = pkgs.hello;
         };
     };
 }

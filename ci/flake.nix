@@ -1,8 +1,10 @@
 {
   description = "Generates the website documentation for the nix-wrapper-modules repository";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  inputs.flake-parts.url = "github:hercules-ci/flake-parts";
+  inputs.flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
   outputs =
-    { nixpkgs, self, ... }:
+    { nixpkgs, self, ... }@inputs:
     let
       inherit (nixpkgs) lib;
       forAllSystems = lib.genAttrs lib.platforms.all;
@@ -78,6 +80,7 @@
           ./docs
           {
             warningsAreErrors = lib.mkDefault false;
+            flake-parts-input = inputs.flake-parts;
             pkgs = import nixpkgs {
               inherit system;
               config = {
