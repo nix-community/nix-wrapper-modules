@@ -9,6 +9,10 @@
   };
   flake-parts = {
     path = ./flake-parts;
+    description = "A flake using flake-parts with the provided flake-parts module";
+  };
+  flake-parts-example = {
+    path = ./flake-parts-example;
     description = "An example flake using flake-parts with the provided flake-parts module";
   };
 }

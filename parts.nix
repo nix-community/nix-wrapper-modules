@@ -21,11 +21,12 @@ in
             key = file;
             options.wrappers = mkOption {
               type = types.lazyAttrsOf ((import ./lib { inherit lib; }).types.subWrapperModuleWith { });
+              visible = "shallow";
               default = { };
               description = ''
                 Submodule option for configuring and exporting wrapper modules!
 
-                https://github.com/nix-community/nix-wrapper-modules
+                [nix-community/nix-wrapper-modules](https://github.com/nix-community/nix-wrapper-modules)
               '';
             };
             options.wrapperModules = mkOption {
@@ -36,7 +37,7 @@ in
 
                 Read only. Modify `flake.wrappers` instead, this will reflect that option.
 
-                https://github.com/nix-community/nix-wrapper-modules
+                [nix-community/nix-wrapper-modules](https://github.com/nix-community/nix-wrapper-modules)
               '';
             };
             config.wrapperModules = (types.lazyAttrsOf types.deferredModule).merge options.wrappers.loc options.wrappers.definitionsWithLocations;
@@ -51,18 +52,19 @@ in
     in
     flake-parts-lib.mkPerSystemOption (
       {
-        pkgs,
         config,
         ...
       }:
       {
         _file = file;
         key = file;
+        config.wrappers.pkgs = lib.mkOptionDefault config._module.args.pkgs;
         options.wrappers.pkgs = mkOption {
           type = types.pkgs;
-          default = pkgs;
           description = ''
             The `pkgs` object used to build `outputs.wrappers` into packages
+
+            Defaults to `_module.args.pkgs`
           '';
         };
         options.wrappers.control_type = mkOption {

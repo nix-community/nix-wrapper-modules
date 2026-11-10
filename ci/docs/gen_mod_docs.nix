@@ -40,6 +40,57 @@ let
         ${if descriptionIncluded != null then "descriptionIncluded" else null} = descriptionIncluded;
       }
     );
+
+  # copied from nix-wrapper-modules/lib/docs/rendermd.nix
+  # used here for flake parts module documentation rendering
+  renderOption =
+    opt:
+    let
+      mkOptField =
+        opt: n: desc:
+        lib.optionalString (opt ? "${n}" && lib.isStringLike opt.${n}) (
+          lib.optionalString (desc != "") "${desc}\n" + "${opt.${n}}\n\n"
+        );
+      declaredBy =
+        { declarations, ... }:
+        let
+          removeViaOption =
+            str:
+            let
+              match = builtins.match "^(.*), via option .*$" str;
+            in
+            if match != null then builtins.elemAt match 0 else str;
+          linkDest =
+            v:
+            if lib.hasPrefix wlib.modulesPath v then
+              "https://github.com/nix-community/nix-wrapper-modules/blob/main"
+              + lib.removePrefix wlib.modulesPath (removeViaOption (toString v))
+            else
+              toString v;
+          linkName = v: lib.removeSuffix "/module.nix" (lib.removePrefix "${wlib.modulesPath}/" (toString v));
+        in
+        builtins.concatStringsSep "\n" (map (v: "- [${linkName v}](${linkDest v})") declarations);
+    in
+    ''
+      ### `${lib.options.showOption (opt.loc or [ ])}`
+
+      ${mkOptField opt "description" ""}${mkOptField opt "relatedPackages" "Related packages:\n"}${
+        mkOptField opt "type" "Type:${lib.optionalString (opt.readOnly or false == true) " (read-only)"}"
+      }${
+        let
+          # default can depend on another field without a default value
+          res = builtins.tryEval (mkOptField opt "default" "Default:");
+        in
+        if res.success or false then res.value else ""
+      }${mkOptField opt "example" "Example:"}${
+        lib.optionalString (opt.declarations or [ ] != [ ]) ''
+          Declared by:
+
+          ${declaredBy opt}
+
+        ''
+      }
+    '';
 in
 {
   imports = [
@@ -98,4 +149,37 @@ in
     inherit (config) warningsAreErrors;
     title = "Core (builtin) Options set";
   } "core" { };
+
+  options.flake-parts-input = lib.mkOption {
+    type = lib.types.raw;
+    default = { };
+    description = "input for flake-parts to make the flake parts docs";
+  };
+  config.drv.flake_parts_docs =
+    let
+      evalFlakeModule = config.flake-parts-input.lib.evalFlakeModule or null;
+      cfg1 = evalFlakeModule { inputs = { }; } { _module.check = false; };
+      cfg = evalFlakeModule { inputs = { }; } {
+        _module.check = false;
+        imports = [ "${wlib.modulesPath}/parts.nix" ];
+        perSystem._module.args.pkgs = pkgs;
+      };
+      base = lib.optionAttrSetToDocList cfg1.options;
+      optDocOut = lib.optionAttrSetToDocList cfg.options;
+      namesInFirst = builtins.listToAttrs (
+        map (x: {
+          name = x.name;
+          value = true;
+        }) base
+      );
+      filteredDoc = builtins.filter (
+        x: !(namesInFirst.${x.name} or false) && (builtins.all (n: n != "_module") x.loc)
+      ) optDocOut;
+      fixedUp = wlib.docs.fixupDocValues {
+        processTypedText =
+          v: if v._type == "literalExpression" then "```nix\n${toString v.text}\n```" else toString v.text;
+      } filteredDoc;
+      markdownOpts = builtins.concatStringsSep "\n\n" (map renderOption fixedUp);
+    in
+    lib.optionalString (evalFlakeModule != null) markdownOpts;
 }

@@ -31,12 +31,14 @@ They will get you started with a module file and the default one also gives you 
     A flake providing a wrapped `wezterm` package with an extra keybind!
   '';
   inputs.wrappers.url = "github:nix-community/nix-wrapper-modules";
+  # These things work without flakes too,
+  # but this gives an example from start to finish!
   outputs = { self, wrappers }: {
-    # These things work without flakes too,
-    # but this gives an example from start to finish!
+    # lib.evalPackage evaluates a wrapper module, and grabs the wrapper from the result
     packages.x86_64-linux.default = wrappers.lib.evalPackage
       ({ config, lib, wlib, pkgs, ... }: {
         pkgs = wrappers.inputs.nixpkgs.legacyPackages.x86_64-linux;
+        # Import one of the pre-built wrapper modules from wlib! (or somewhere else)
         imports = [ wlib.wrapperModules.wezterm ];
         luaInfo = {
           keys = [
@@ -64,6 +66,8 @@ They will get you started with a module file and the default one also gives you 
     forAllSystems = with nixpkgs.lib; genAttrs platforms.all;
   in {
     packages = forAllSystems (system: {
+      # call .wrap on an existing package or exported module evaluation
+      # generally most useful with existing packages to add settings.
       default = wrappers.wrappers.mpv.wrap (
         {config, wlib, lib, pkgs, ...}: {
           pkgs = import nixpkgs { inherit system; };
@@ -204,7 +208,7 @@ inputs: # <- get the lib somehow
 }
 ```
 
-### `nixos`, `home-manager`, And Friends
+## `nixos`, `home-manager`, And Friends
 
 Because it uses the regular module system and evaluates as a `lib.types.submodule` option,
 this library has excellent integration with `nixos`, `home-manager`, `nix-darwin` and any other such systems.
@@ -262,7 +266,7 @@ With a single, simple function, you can use any wrapper module directly as a mod
 
 See the [`wlib.getInstallModule`](../lib/wlib.html#function-library-wlib.getInstallModule) documentation for more info!
 
-### `flake-parts`
+## `flake-parts`
 
 This repository also offers a [`flake-parts`](https://github.com/hercules-ci/flake-parts) module!
 
@@ -350,3 +354,7 @@ In addition to that, it will build `packages.*.*` for each of the systems and wr
 If `wrappers.control_type` is `"exclude"`, then including `true` for a value will exclude its `packages` output.
 
 If you change it to `"build"`, then you must include `true` for all you want to be built.
+
+### `flake-parts` Options:
+
+
