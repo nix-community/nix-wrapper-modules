@@ -339,9 +339,8 @@ in
                 _:
                 {
                   _class,
-                  pkgs ? null,
                   ...
-                }:
+                }@targetArgs:
                 {
                   _file = wlib.core;
                   imports = lib.toList (config.modules.${_class} or [ ]);
@@ -353,6 +352,7 @@ in
                       lib.mkOption {
                         type = moduleType;
                         default = { };
+                        description = "nix-wrapper-modules wrapper module installed as submodule via its `.install` module";
                       }
                     );
                   config = config.mkWrapperExtension "wrappers-install-add-enable-option" {
@@ -361,7 +361,15 @@ in
                       lib.last config.optionLocation
                     );
                     options.enable = lib.mkEnableOption "the wrapper module.";
-                    config.pkgs = lib.mkIf (pkgs != null) pkgs;
+                    config.pkgs =
+                      let
+                        targetPkgs =
+                          if targetArgs.specialArgs.pkgs or null != null then
+                            targetArgs.specialArgs.pkgs
+                          else
+                            targetArgs.config._module.args.pkgs or null;
+                      in
+                      lib.mkIf (targetPkgs != null) targetPkgs;
                   };
                 };
             };
