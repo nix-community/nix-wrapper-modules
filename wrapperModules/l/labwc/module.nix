@@ -13,8 +13,9 @@
       default = [ ];
       description = ''
         List of font packages to make available to labwc. The wrapper generates a
-        fontconfig configuration from these packages and sets `FONTCONFIG_FILE`
-        so labwc and the applications it launches can find them.
+        fontconfig configuration file from these packages and sets
+        `FONTCONFIG_FILE` so that labwc and the applications it launches can find
+        the fonts.
       '';
       example = lib.literalExpression ''
         [
@@ -39,9 +40,9 @@
             type = lib.types.nullOr lib.types.str;
             default = null;
             description = ''
-              Name of the cursor theme to use. It must match a theme in
-              `cursor.path`, or a theme already installed on your system
-              (not recommended).
+              Name of the cursor theme to use. It must match a theme in the
+              directory configured by `cursor.path`, or a theme already
+              installed on your system (not recommended).
             '';
             example = "oreo_blue_cursors";
           };
@@ -67,11 +68,11 @@
         };
         default = { };
         description = ''
-          Main labwc configuration file. It controls window rules, keybindings,
-          themes, and other compositor behavior. Create this file with Nix using
-          `content`, or use `path` to point to an existing file.
+          The main labwc configuration file. It controls window rules,
+          keybindings, themes, and other compositor behavior. Create this file
+          with Nix using `content`, or use `path` to point to an existing file.
 
-          For more details, see [all supported config elements & attributes](https://github.com/labwc/labwc/blob/master/docs/rc.xml.all) and the [labwc-config man page](https://labwc.github.io/labwc-config.5.html).
+          For more details, see [all supported configuration elements and attributes](https://github.com/labwc/labwc/blob/master/docs/rc.xml.all) and the [labwc-config man page](https://labwc.github.io/labwc-config.5.html).
         '';
       };
       "menu.xml" = lib.mkOption {
@@ -80,9 +81,9 @@
         };
         default = { };
         description = ''
-          Menu definition used by labwc's built-in menu generator. It describes
-          the root menu and its submenus. Create this file with Nix using
-          `content`, or use `path` to point to an existing file.
+          The menu definition used by labwc. It describes the root menu and its
+          submenus. Create this file with Nix using `content`, or use `path` to
+          point to an existing file.
 
           For more details, see the [labwc-menu man page](https://labwc.github.io/labwc-menu.5.html) and the [reference file](https://github.com/labwc/labwc/blob/master/docs/menu.xml).
         '';
@@ -90,7 +91,7 @@
       autostart = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [ ];
-        description = "Commands run when labwc starts. The wrapper writes them to the generated `autostart` script, joining entries with `&`.";
+        description = "Commands to run when labwc starts. The wrapper writes them to the generated `autostart` script, separating entries with `&`.";
         example = lib.literalExpression ''
           [
             "''${lib.getExe pkgs.swaybg} -c '#334455'"
@@ -100,7 +101,7 @@
       shutdown = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [ ];
-        description = "Commands run when labwc exits. The wrapper writes them to the generated `shutdown` script, joining entries with `&`.";
+        description = "Commands to run when labwc exits. The wrapper writes them to the generated `shutdown` script, separating entries with `&`.";
       };
     };
   };
@@ -108,13 +109,32 @@
   config = {
     package = lib.mkDefault pkgs.labwc;
     meta.description.pre = ''
-      Labwc is a [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots)-based stacking window manager (compositor) for [Wayland](https://wayland.freedesktop.org/), inspired by [Openbox](https://openbox.org/).
-      Labwc loads its configuration from the wrapper's `labwc_config/labwc` directory.
-      Most configuration files can be created with `configFiles`. For additional files in the configuration directory, use `constructFiles`:
-      ```
+      Labwc is a [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots)-based stacking compositor for [Wayland](https://wayland.freedesktop.org/), inspired by [Openbox](https://openbox.org/).
+
+      Labwc can be configured using configuration files stored in the `labwc_config/labwc` directory and loaded via `--config-dir`.
+      The most common configuration files can be created through the `configFiles` options:
+
+      - `configFiles."rc.xml"` is the main configuration file. It controls window rules, keybindings, themes, and other compositor behavior.
+      - `configFiles."menu.xml"` defines the root menu and its submenus.
+      - `configFiles.autostart` and `configFiles.shutdown` take lists of commands to run when labwc starts and exits.
+
+      For configuration guides, see these useful resources:
+
+      - [Getting started page](https://labwc.github.io/getting-started.html)
+      - [Labwc man pages](https://labwc.github.io/manual.html)
+      - Example configuration files for [rc.xml](https://github.com/labwc/labwc/blob/master/docs/rc.xml.all) and [menu.xml](https://github.com/labwc/labwc/blob/master/docs/menu.xml)
+
+      Useful tips:
+
+      - `configFiles."rc.xml"` and `configFiles."menu.xml"` can be created with Nix using the `content` option, or you can point to existing files using the `path` option.
+      - To set environment variables instead of using the `environment` configuration file, use the `env` option (`env = { ... }`) provided by the wrapper.
+      - Because of the declarative nature of Nix, [labwc-tweaks](https://github.com/labwc/labwc-tweaks) is **not** supported by this wrapper.
+      - If you ever need to create additional configuration files beyond those provided by `configFiles`, you can create them yourself using `constructFiles`:
+
+      ```nix
       constructFiles.filename = {
         relPath = "labwc_config/labwc/filename";
-        content = ''';
+        content = '''
           # Content
         ''';
       };
