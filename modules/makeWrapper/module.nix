@@ -845,12 +845,8 @@ in
             as it is by default, then they will inherit the defaults from the top level as well.
 
             They also have their own `package`, `exePath`, and `binName` options, with sensible defaults.
-
-            ---
           '';
           post = ''
-            ---
-
             ## Modify this module before import
 
             Should you ever need to redefine `config.wrapperFunction`, you might have slightly different options!

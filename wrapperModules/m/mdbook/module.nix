@@ -365,6 +365,17 @@ in
         If not null, replace the main package with a link to the generator script for that book
       '';
     };
+    buildCommand = lib.mkOption {
+      type = lib.types.attrsOf (
+        wlib.types.spec (
+          { config, name, ... }: {
+            config.before = lib.optional (
+              name != "mkMdBooks" && !builtins.elem "mkMdBooks" config.after
+            ) "mkMdBooks";
+          }
+        )
+      );
+    };
   };
 
   config = {
@@ -444,9 +455,18 @@ in
           }
         ))
       ];
-      buildPhase = # bash
+    };
+    buildCommand.mkMdBooks = {
+      after = [
+        "makeWrapper"
+        "constructFiles"
+        "symlinkScript"
+        "systemd"
+        "setupStdenvPhases"
+        "runStdenvPhases"
+      ];
+      data = # bash
       ''
-        runHook preBuild
         jq -r '.bookData | values[] | @base64' "$NIX_ATTRS_JSON_FILE" |
         while read -r entry; do
           value="$(printf '%s' "$entry" | base64 --decode)"
@@ -475,8 +495,7 @@ in
           )
           ''
             ln -sf ${config.mainBook} ${config.wrapperPaths.placeholder}
-          ''
-      + "\nrunHook postBuild";
+          '';
     };
     passthru.book-out-dir = book-out-dir;
     package = lib.mkDefault pkgs.mdbook;

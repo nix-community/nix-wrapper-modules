@@ -122,7 +122,5 @@
     Mirrors the original derivation contents into the final wrapper derivation, and gives some patching options.
 
     Imported by `wlib.modules.default`
-
-    ---
   '';
 }
