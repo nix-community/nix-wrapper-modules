@@ -28,7 +28,7 @@ let
   split = wlib.makeWrapper.splitDal (wlib.makeWrapper.aggregateSingleOptionSet { inherit config; });
 
   abbreviationModule =
-    { name, ... }:
+    { name, config, ... }:
     {
       options = {
         word = mkOption {
@@ -45,7 +45,7 @@ let
             "anywhere"
             "command"
           ];
-          default = "command";
+          default = if config.command or null == null then "command" else "anywhere";
           description = ''
             The scope of the abbreviation.
 
