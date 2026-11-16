@@ -58,6 +58,17 @@
           This gives a nice boost in startup time.
         '';
       };
+      options.propagateLuaDeps = lib.mkOption {
+        type = lib.types.bool;
+        default = parentSpec.propagateLuaDeps or true;
+        description = ''
+          Neovim plugins in nixpkgs sometimes are built as lua packages, and these sometimes have their own dependencies.
+
+          The default value of `true` will include these on the `LUA_PATH` and `LUA_CPATH` for you automatically.
+
+          Most users will wish this to remain `true`.
+        '';
+      };
     };
   config.prefixVar =
     let
@@ -70,30 +81,32 @@
         config.hosts.node.nvim-host.enable or false && config.hosts.node.nvim-host.prefixNode or false;
     in
     lib.mkIf (autodeps != [ ] || isPrefixedRuby || isPrefixedNode) (
-      lib.optional (autodeps != [ ]) {
-        name = "NIXPKGS_AUTODEPS_PREFIX";
-        data = [
-          "PATH"
-          ":"
-          "${lib.makeBinPath autodeps}"
-        ];
-      }
-      ++ lib.optional isPrefixedRuby {
-        name = "RUBY_HOST_PATH_ADDITIONS";
-        data = [
-          "PATH"
-          ":"
-          "${config.hosts.ruby.wrapper}/bin"
-        ];
-      }
-      ++ lib.optional isPrefixedNode {
-        name = "NODE_HOST_PATH_ADDITIONS";
-        data = [
-          "PATH"
-          ":"
-          "${pkgs.nodejs}/bin"
-        ];
-      }
+      lib.mkOrder 1510 (
+        lib.optional (autodeps != [ ]) {
+          name = "NIXPKGS_AUTODEPS_PREFIX";
+          data = [
+            "PATH"
+            ":"
+            "${lib.makeBinPath autodeps}"
+          ];
+        }
+        ++ lib.optional isPrefixedRuby {
+          name = "RUBY_HOST_PATH_ADDITIONS";
+          data = [
+            "PATH"
+            ":"
+            "${config.hosts.ruby.wrapper}/bin"
+          ];
+        }
+        ++ lib.optional isPrefixedNode {
+          name = "NODE_HOST_PATH_ADDITIONS";
+          data = [
+            "PATH"
+            ":"
+            "${pkgs.nodejs}/bin"
+          ];
+        }
+      )
     );
   config.suffixVar =
     let
@@ -104,8 +117,88 @@
         config.hosts.ruby.nvim-host.enable or false && !(config.hosts.ruby.nvim-host.prefixRuby or true);
       isSuffixedNode =
         config.hosts.node.nvim-host.enable or false && !(config.hosts.node.nvim-host.prefixNode or true);
+      collectedLuaPlugins = config.specCollect (
+        acc: v:
+        acc ++ lib.optional (v.propagateLuaDeps or true && v.data.requiredLuaModules or [ ] != [ ]) v.data
+      ) [ ];
+      partitionedLuaModules = builtins.partition (
+        p:
+        p.luaModule.LuaPathSearchPaths or null == config.package.lua.LuaPathSearchPaths or [ ]
+        && p.luaModule.LuaCPathSearchPaths or null == config.package.lua.LuaCPathSearchPaths or [ ]
+      ) collectedLuaPlugins;
+      toIndividualLuaPaths =
+        isC:
+        builtins.concatMap (
+          v:
+          let
+            gen = v.luaModule.pkgs.luaLib.${if isC then "genLuaCPathAbsStr" else "genLuaPathAbsStr"} or null;
+          in
+          if gen != null then map (lm: gen lm) v.requiredLuaModules else [ ]
+        );
+      otherLuaPathAdditions =
+        if
+          config.package.lua.LuaPathSearchPaths or [ ] == pkgs.neovim-unwrapped.lua.LuaPathSearchPaths or null
+          &&
+            config.package.lua.LuaCPathSearchPaths or [ ] == pkgs.neovim-unwrapped.lua.LuaCPathSearchPaths
+              or null
+        then
+          # if we can use our neovim's lua for making the env for the ones from nixpkgs too, we did that already.
+          {
+            lua = toIndividualLuaPaths false partitionedLuaModules.wrong;
+            c = toIndividualLuaPaths true partitionedLuaModules.wrong;
+          }
+        else
+          # If we could not use the neovim's lua for making the env for the ones from nixpkgs too,
+          # we will split those and combine the ones we can
+          lib.pipe partitionedLuaModules.wrong [
+            (builtins.partition (
+              p:
+              p.luaModule.LuaPathSearchPaths or [ ] == pkgs.neovim-unwrapped.lua.LuaPathSearchPaths or null
+              && p.luaModule.LuaCPathSearchPaths or [ ] == pkgs.neovim-unwrapped.lua.LuaCPathSearchPaths or null
+            ))
+            ({ right, wrong }: {
+              # make an env out of the ones from nixpkgs together
+              fromnixpkgs =
+                let
+                  inherit (pkgs.neovim-unwrapped.lua) withPackages;
+                  inherit (pkgs.neovim-unwrapped.lua.pkgs.luaLib) genLuaPathAbsStr genLuaCPathAbsStr;
+                  env = withPackages (lp: right);
+                in
+                if right == [ ] then
+                  { }
+                else
+                  {
+                    lua = [ (genLuaPathAbsStr env) ];
+                    c = [ (genLuaCPathAbsStr env) ];
+                  };
+              # otherwise fall back to individual
+              other = {
+                lua = toIndividualLuaPaths false wrong;
+                c = toIndividualLuaPaths true wrong;
+              };
+            })
+            ({ fromnixpkgs, other }: {
+              lua = fromnixpkgs.lua or [ ] ++ other.lua or [ ];
+              c = fromnixpkgs.c or [ ] ++ other.c or [ ];
+            })
+          ];
+      luaEnv = (config.package.lua.withPackages or pkgs.luajit.withPackages) (
+        lp:
+        config.settings.nvim_lua_env lp
+        ++ builtins.concatMap (v: v.requiredLuaModules) partitionedLuaModules.right
+      );
+      NVIM_LUA_PATH =
+        ((config.package.lua or pkgs.luajit).pkgs.luaLib.genLuaPathAbsStr luaEnv)
+        + lib.optionalString (partitionedLuaModules.wrong != [ ] && otherLuaPathAdditions.lua != [ ]) (
+          ";" + builtins.concatStringsSep ";" otherLuaPathAdditions.lua
+        );
+      NVIM_LUA_CPATH =
+        ((config.package.lua or pkgs.luajit).pkgs.luaLib.genLuaCPathAbsStr luaEnv)
+        + lib.optionalString (partitionedLuaModules.wrong != [ ] && otherLuaPathAdditions.c != [ ]) (
+          ";" + builtins.concatStringsSep ";" otherLuaPathAdditions.c
+        );
     in
-    lib.mkIf (autodeps != [ ] || isSuffixedRuby || isSuffixedNode) (
+    lib.mkOrder 1510 (
       lib.optional (autodeps != [ ]) {
         name = "NIXPKGS_AUTODEPS_PREFIX";
         data = [
@@ -130,6 +223,24 @@
           "${pkgs.nodejs}/bin"
         ];
       }
+      ++ [
+        {
+          name = "NIX_PROPAGATED_LUA_PATH";
+          data = [
+            "LUA_PATH"
+            ";"
+            NVIM_LUA_PATH
+          ];
+        }
+        {
+          name = "NIX_PROPAGATED_LUA_CPATH";
+          data = [
+            "LUA_CPATH"
+            ";"
+            NVIM_LUA_CPATH
+          ];
+        }
+      ]
     );
   config.specMaps = lib.mkOrder 490 [
     {

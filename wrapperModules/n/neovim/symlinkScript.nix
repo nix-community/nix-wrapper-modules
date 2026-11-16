@@ -110,9 +110,6 @@ finalDrv
     mkdir -p ${placeholder outputName}/nix-support && \
     cp -r ${package}/nix-support/* ${placeholder outputName}/nix-support
 
-  ''
-  + ''
-
     # Create symlinks for aliases
     ${lib.optionalString (aliases != [ ] && binName != "") ''
       mkdir -p '${placeholder outputName}/bin'
@@ -138,14 +135,6 @@ finalDrv
     for i in $(find -L ${lib.escapeShellArg final-packdir} -name propagated-build-inputs ); do
       cat "$i" >> ${lib.escapeShellArg "${final-packdir}/nix-support/propagated-build-inputs"}
     done
-
-    # see:
-    # https://github.com/NixOS/nixpkgs/issues/318925
-    echo "Looking for lua dependencies..."
-    source ${config.package.lua}/nix-support/utils.sh || true
-    _addToLuaPath ${lib.escapeShellArg final-packdir} || true
-    echo "propagated dependency path for plugins: $LUA_PATH"
-    echo "propagated dependency cpath for plugins: $LUA_CPATH"
   ''
   + "\n"
   + buildCommand

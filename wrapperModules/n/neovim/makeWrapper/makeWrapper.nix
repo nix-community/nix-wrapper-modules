@@ -3,7 +3,6 @@ maybe_compile:
   config,
   wlib,
   lib,
-  luajit,
   makeWrapper,
   makeBinaryWrapper,
   dieHook,
@@ -66,9 +65,6 @@ let
     "--add-flag"
     "source${luarc-path}"
   ];
-  luaEnv = (config.package.lua.withPackages or luajit.withPackages) config.settings.nvim_lua_env;
-  NVIM_LUA_PATH = ((config.package.lua or luajit).pkgs.luaLib.genLuaPathAbsStr luaEnv);
-  NVIM_LUA_CPATH = ((config.package.lua or luajit).pkgs.luaLib.genLuaCPathAbsStr luaEnv);
   manifest-path = lib.escapeShellArg "${placeholder config.outputName}/${config.binName or ""}-rplugin.vim";
   makeWrapperCmd =
     isFinal:
@@ -83,40 +79,8 @@ let
           data = manifest-path;
         }
         ++ val
-        ++ [
-          {
-            name = "NIX_PROPAGATED_LUA_PATH";
-            esc-fn = x: x;
-            type = "UNPROCESSED";
-            data = [
-              "--suffix"
-              "LUA_PATH"
-              "';'"
-              "${lib.escapeShellArg NVIM_LUA_PATH}"
-              "--suffix"
-              "LUA_PATH"
-              "';'"
-              "\"$LUA_PATH\""
-            ];
-          }
-          {
-            name = "NIX_PROPAGATED_LUA_CPATH";
-            esc-fn = x: x;
-            type = "UNPROCESSED";
-            data = [
-              "--suffix"
-              "LUA_CPATH"
-              "';'"
-              "${lib.escapeShellArg NVIM_LUA_CPATH}"
-              "--suffix"
-              "LUA_CPATH"
-              "';'"
-              "\"$LUA_CPATH\""
-            ];
-          }
-        ]
         ++ lib.optional isFinal {
-          name = "NIX_GENERATED_VIMINIT";
+          name = "VIMINIT";
           type = "envDefault";
           esc-fn = lib.escapeShellArg;
           attr-name = "VIMINIT";
@@ -144,8 +108,6 @@ let
             v.attr-name
             v.data
           ]
-        else if v.type or null == "UNPROCESSED" then
-          v.data
         else if v.type or null == "prefixVar" then
           [ "--prefix" ] ++ esc-list v.data
         else if v.type or null == "suffixVar" then
