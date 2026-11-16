@@ -163,4 +163,10 @@
     github = "jasdeep-dhillon";
     githubId = 59929844;
   };
+  szymon-jozef = {
+    name = "Szymon Józef";
+    email = "szymon_jozef@proton.me";
+    github = "szymon-jozef";
+    githubId = 98268045;
+  };
 }
