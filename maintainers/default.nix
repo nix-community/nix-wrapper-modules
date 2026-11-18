@@ -169,4 +169,9 @@
     github = "szymon-jozef";
     githubId = 98268045;
   };
+  pimkoter = {
+    name = "PimKoter";
+    github = "PimKoter";
+    githubId = 242074666;
+  };
 }
