@@ -95,7 +95,7 @@
             if builtins.isBool value then
               lib.optional value name
             else if builtins.isList value then
-              map (v: [ "${name} ${lib.escapeShellArg v}" ]) value
+              lib.flatten (map (v: [ "${name} ${lib.escapeShellArg v}" ]) value)
             else
               [ "${name} ${lib.escapeShellArg value}" ]
           ))
