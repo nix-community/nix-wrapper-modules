@@ -38,6 +38,19 @@ in
       '';
     };
 
-    meta.maintainers = [ wlib.maintainers.pimkoter ];
+    settings.onboarding = lib.mkDefault false;
+
+    meta = {
+      maintainers = [ wlib.maintainers.pimkoter ];
+      description.pre = ''
+        This wrapper provides a separate configuration file for Herdr, configured through the settings option.
+        Note that only the configuration file path is overridden; Herdr's other runtime files, such as logs,
+        snapshots, and sockets, are still stored in ~/.config/herdr.
+        Since Herdr does not support loading configuration from multiple locations, 
+        changes made through the TUI settings menu will not be reflected in the wrapper-managed configuration. 
+        Additionally, the onboarding prompt is disabled by default, as settings configured through it would not be applied.
+        For this reason onboarding is disabled by default.
+      '';
+    };
   };
 }
