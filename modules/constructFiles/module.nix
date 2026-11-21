@@ -38,9 +38,39 @@
               '';
               apply = wlib.sanitizeEnvVarName;
             };
+            format = lib.mkOption {
+              type = lib.types.nullOr (
+                lib.types.enum [
+                  "json"
+                  "toml"
+                  "yaml"
+                ]
+              );
+              default = null;
+              description = ''
+                Generate the file from `value` in the given format.
+
+                When set, `content` defaults to `builtins.toJSON value`,
+                and `builder` defaults to a `remarshal` command which converts
+                that JSON into the requested format.
+
+                Placeholders such as `''${placeholder "out"}` inside `value` keep working,
+                since they are just strings within the generated JSON.
+
+                Both `content` and `builder` may still be overridden.
+              '';
+            };
+            value = lib.mkOption {
+              type = lib.types.anything;
+              default = { };
+              description = ''
+                The value to serialize when `format` is set. Ignored otherwise.
+              '';
+            };
             content = lib.mkOption {
               type = lib.types.lines;
-              default = "";
+              default = if config.format == null then "" else builtins.toJSON config.value;
+              defaultText = lib.literalExpression ''if format == null then "" else builtins.toJSON value'';
               description = ''
                 The content for the file to be added to the final derivation
               '';
@@ -85,7 +115,29 @@
             };
             builder = lib.mkOption {
               type = lib.types.str;
-              default = if config.passAsContent or false then ''echo "$1" > "$2"'' else ''cp "$1" "$2"'';
+              default =
+                let
+                  remarshal = tool: "${top.config.pkgs.remarshal}/bin/${tool}";
+                  convert =
+                    tool:
+                    if config.passAsContent then
+                      ''printf '%s' "$1" | ${remarshal tool} - "$2"''
+                    else
+                      ''${remarshal tool} "$1" "$2"'';
+                in
+                if config.format == "toml" then
+                  convert "json2toml"
+                else if config.format == "yaml" then
+                  convert "json2yaml"
+                else if config.passAsContent then
+                  ''echo "$1" > "$2"''
+                else
+                  ''cp "$1" "$2"'';
+              defaultText = lib.literalMD ''
+                - `format = "toml"`: `json2toml` from `pkgs.remarshal`
+                - `format = "yaml"`: `json2yaml` from `pkgs.remarshal`
+                - otherwise: `cp "$1" "$2"` (or `echo "$1" > "$2"` when `passAsContent = true`)
+              '';
               description = ''
                 the command used to build the file.
 
