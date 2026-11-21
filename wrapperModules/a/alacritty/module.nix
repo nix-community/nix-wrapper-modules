@@ -9,10 +9,7 @@
   imports = [ wlib.modules.default ];
   options = {
     settings = lib.mkOption {
-      type = wlib.types.structuredValueWith {
-        nullable = false;
-        typeName = "TOML";
-      };
+      type = wlib.types.tomlValue;
       default = { };
       description = ''
         Configuration of alacritty.
@@ -22,9 +19,9 @@
   };
   config.flags."--config-file" = config.constructFiles.generatedConfig.path;
   config.constructFiles.generatedConfig = {
-    content = builtins.toJSON config.settings;
+    format = "toml";
+    value = config.settings;
     relPath = "${config.binName}-config.toml";
-    builder = ''${pkgs.remarshal}/bin/json2toml "$1" "$2"'';
   };
   config.package = lib.mkDefault pkgs.alacritty;
   config.meta.maintainers = [ wlib.maintainers.birdee ];

@@ -13,7 +13,12 @@
     default = { };
     type = lib.types.attrsOf (
       lib.types.submodule (
-        { config, name, ... }:
+        {
+          config,
+          options,
+          name,
+          ...
+        }:
         {
           config.outPath =
             if config.relPath == "" then
@@ -38,9 +43,55 @@
               '';
               apply = wlib.sanitizeEnvVarName;
             };
+            format = lib.mkOption {
+              type = lib.types.nullOr (
+                lib.types.enum [
+                  "json"
+                  "toml"
+                  "yaml"
+                ]
+              );
+              default = null;
+              description = ''
+                Generate the file from `value` in the given format.
+
+                When set, `content` defaults to `builtins.toJSON value`,
+                and `builder` defaults to a `remarshal` command which converts
+                that JSON into the requested format.
+
+                Both `content` and `builder` may still be overridden.
+              '';
+            };
+            value = lib.mkOption {
+              type =
+                if config.format == null then
+                  wlib.types.structuredValueWith { typeName = "serializable"; }
+                else
+                  {
+                    json = wlib.types.jsonValue;
+                    toml = wlib.types.tomlValue;
+                    yaml = wlib.types.yamlValue;
+                  }
+                  .${config.format};
+              default = { };
+              description = ''
+                The value to serialize when `format` is set. Ignored otherwise.
+
+                Attribute sets are merged recursively and lists are concatenated.
+                `null` is allowed, except when `format = "toml"`.
+              '';
+            };
             content = lib.mkOption {
               type = lib.types.lines;
-              default = "";
+              default =
+                if config.format != null then
+                  builtins.toJSON config.value
+                # `value` was defined by someone (any priority above the option's own default)
+                else if options.value.highestPrio < (lib.mkOptionDefault null).priority then
+                  throw ''constructFiles.${name}: `value` is set but `format` is null; set `format` to "json", "toml" or "yaml".''
+                else
+                  "";
+              defaultText = lib.literalExpression ''if format == null then "" else builtins.toJSON value'';
               description = ''
                 The content for the file to be added to the final derivation
               '';
@@ -85,7 +136,29 @@
             };
             builder = lib.mkOption {
               type = lib.types.str;
-              default = if config.passAsContent or false then ''echo "$1" > "$2"'' else ''cp "$1" "$2"'';
+              default =
+                let
+                  remarshal = tool: "${top.config.pkgs.remarshal}/bin/${tool}";
+                  convert =
+                    tool:
+                    if config.passAsContent then
+                      ''printf '%s' "$1" | ${remarshal tool} - "$2"''
+                    else
+                      ''${remarshal tool} "$1" "$2"'';
+                in
+                if config.format == "toml" then
+                  convert "json2toml"
+                else if config.format == "yaml" then
+                  convert "json2yaml"
+                else if config.passAsContent then
+                  ''echo "$1" > "$2"''
+                else
+                  ''cp "$1" "$2"'';
+              defaultText = lib.literalMD ''
+                - `format = "toml"`: `json2toml` from `pkgs.remarshal`
+                - `format = "yaml"`: `json2yaml` from `pkgs.remarshal`
+                - otherwise: `cp "$1" "$2"` (or `echo "$1" > "$2"` when `passAsContent = true`)
+              '';
               description = ''
                 the command used to build the file.
 
