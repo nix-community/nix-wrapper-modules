@@ -6,7 +6,10 @@
   ...
 }:
 {
-  imports = [ wlib.modules.default ];
+  imports = [
+    wlib.modules.default
+    wlib.modules.systemd
+  ];
 
   options = {
     settings = lib.mkOption {
@@ -52,6 +55,29 @@
     constructFiles.generatedStyle = {
       content = config.stylesheet;
       relPath = "${config.binName}-style.css";
+    };
+
+    systemd.user.service.swaync = {
+      overwrite = true;
+
+      Unit = {
+        Description = "Swaync notification daemon";
+        Documentation = [ "https://github.com/ErikReider/SwayNotificationCenter" ];
+        PartOf = [ "graphical-session.target" ];
+        After = [ "graphical-session.target" ];
+        ConditionEnvironment = "WAYLAND_DISPLAY";
+        X-Restart-Triggers = [ config.constructFiles.generatedConfig.path ];
+      };
+
+      Service = {
+        Type = "dbus";
+        BusName = "org.freedesktop.Notifications";
+        ExecStart = config.wrapperPaths.placeholder;
+        ExecReload = "${config.wrapperPaths.placeholder} --reload-config ; ${config.wrapperPaths.placeholder} --reload-css";
+        Restart = "on-failure";
+      };
+
+      Install.WantedBy = [ "graphical-session.target" ];
     };
 
     flags = {
