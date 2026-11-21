@@ -20,7 +20,8 @@ in
     default = { };
     description = ''
       Herdr configuration options.
-      See the Herdr documentation for available options.
+      See <https://herdr.dev/tui/docs/config-reference/> for available options,
+      or run `herdr --default-config` to print the full default configuration.
     '';
   };
 
@@ -43,13 +44,14 @@ in
     meta = {
       maintainers = [ wlib.maintainers.pimkoter ];
       description.pre = ''
-        This wrapper provides a separate configuration file for Herdr, configured through the settings option.
+        This wrapper provides a separate configuration file for Herdr, configured through the `settings` option.
         Note that only the configuration file path is overridden; Herdr's other runtime files, such as logs,
-        snapshots, and sockets, are still stored in ~/.config/herdr.
-        Since Herdr does not support loading configuration from multiple locations, 
-        changes made through the TUI settings menu will not be reflected in the wrapper-managed configuration. 
-        Additionally, the onboarding prompt is disabled by default, as settings configured through it would not be applied.
-        For this reason onboarding is disabled by default.
+        snapshots, and sockets, are still stored in `$XDG_CONFIG_HOME/herdr` (`~/.config/herdr` by default).
+        Since the generated configuration file is read-only and Herdr does not support loading configuration
+        from multiple locations, anything that writes to the config file will not work. This includes changes
+        made through the TUI settings menu, `herdr config reset-keys` and `herdr channel set`.
+        For the same reason, the onboarding prompt is disabled by default, as settings configured through it
+        would not be applied.
       '';
     };
   };
