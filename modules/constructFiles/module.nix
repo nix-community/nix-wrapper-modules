@@ -59,9 +59,6 @@
                 and `builder` defaults to a `remarshal` command which converts
                 that JSON into the requested format.
 
-                Placeholders such as `''${placeholder "out"}` inside `value` keep working,
-                since they are just strings within the generated JSON.
-
                 Both `content` and `builder` may still be overridden.
               '';
             };
