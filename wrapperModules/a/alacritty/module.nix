@@ -9,10 +9,7 @@
   imports = [ wlib.modules.default ];
   options = {
     settings = lib.mkOption {
-      type = wlib.types.structuredValueWith {
-        nullable = false;
-        typeName = "TOML";
-      };
+      type = wlib.types.tomlValue;
       default = { };
       description = ''
         Configuration of alacritty.

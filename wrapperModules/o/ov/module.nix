@@ -9,7 +9,7 @@
   imports = [ wlib.modules.default ];
   options = {
     settings = lib.mkOption {
-      type = wlib.types.structuredValueWith { typeName = "YAML 1.1"; };
+      type = wlib.types.yamlValue;
       default = { };
       description = ''
         Configuration of ov.

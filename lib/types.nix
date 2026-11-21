@@ -588,6 +588,49 @@ in
     in
     valueType;
 
+  /**
+    A value that can be serialized to TOML.
+
+    Shorthand for `wlib.types.structuredValueWith { typeName = "TOML"; nullable = false; }`
+    (TOML has no `null`).
+
+    Pairs with `constructFiles.<name>.format = "toml"`:
+
+    ```nix
+    options.settings = lib.mkOption {
+      type = wlib.types.tomlValue;
+      default = { };
+    };
+    config.constructFiles.generatedConfig = {
+      format = "toml";
+      value = config.settings;
+      relPath = "''${config.binName}-config.toml";
+    };
+    ```
+  */
+  tomlValue = wlib.types.structuredValueWith {
+    typeName = "TOML";
+    nullable = false;
+  };
+
+  /**
+    A value that can be serialized to JSON.
+
+    Shorthand for `wlib.types.structuredValueWith { typeName = "JSON"; }`.
+
+    Pairs with `constructFiles.<name>.format = "json"`.
+  */
+  jsonValue = wlib.types.structuredValueWith { typeName = "JSON"; };
+
+  /**
+    A value that can be serialized to YAML.
+
+    Shorthand for `wlib.types.structuredValueWith { typeName = "YAML"; }`.
+
+    Pairs with `constructFiles.<name>.format = "yaml"`.
+  */
+  yamlValue = wlib.types.structuredValueWith { typeName = "YAML"; };
+
   /*
     from:
     https://github.com/nix-community/home-manager/blob/8a423e444b17dde406097328604a64fc7429e34e/modules/programs/hyprlock.nix
