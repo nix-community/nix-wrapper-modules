@@ -120,7 +120,7 @@ test "constructFiles" {
 
   # NOTE: passAsContent only works together with __structuredAttrs
   # (also true for the default builder on main).
-  "format works with passAsContent" =
+  "format with __structuredAttrs and passAsContent (stdin builder)" =
     let
       wrapper =
         (evalWith {
@@ -139,7 +139,7 @@ test "constructFiles" {
       (fileContains file ''^str = "hello"$'')
     ];
 
-  "format works with __structuredAttrs" =
+  "format with __structuredAttrs (temp file builder)" =
     let
       wrapper =
         (evalWith {
@@ -166,7 +166,7 @@ test "constructFiles" {
             constructFiles.cfg = {
               relPath = "nested/dir/cfg.toml";
               format = "toml";
-              value.path = "${placeholder config.outputName}/some/file";
+              value.some_file = "${placeholder config.outputName}/some/file";
             };
           }
         )).wrapper;
@@ -174,7 +174,7 @@ test "constructFiles" {
     in
     [
       (isFile file)
-      (fileContains file ''^path = "${wrapper}/some/file"$'')
+      (fileContains file ''^some_file = "${wrapper}/some/file"$'')
     ];
 
   "content and builder can still be overridden" =
