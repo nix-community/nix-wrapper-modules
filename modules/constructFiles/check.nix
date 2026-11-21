@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   self,
   tlib,
   ...
@@ -190,5 +191,105 @@ test "constructFiles" {
     in
     [
       (fileContains "${wrapper}/cfg.toml" "^overridden$")
+    ];
+
+  "value merges attrsets recursively and concatenates lists" =
+    let
+      cfg = evalWith {
+        imports = [
+          {
+            constructFiles.cfg = {
+              relPath = "cfg.json";
+              format = "json";
+              value = {
+                ui.sound.enabled = false;
+                list = [ "a" ];
+              };
+            };
+          }
+          {
+            constructFiles.cfg.value = {
+              ui.theme = "dark";
+              list = [ "b" ];
+            };
+          }
+        ];
+      };
+    in
+    [
+      (areEqual {
+        ui = {
+          sound.enabled = false;
+          theme = "dark";
+        };
+        list = [
+          "a"
+          "b"
+        ];
+      } (builtins.fromJSON cfg.constructFiles.cfg.content))
+    ];
+
+  "value rejects non-serializable values" =
+    let
+      cfg = evalWith {
+        constructFiles.cfg = {
+          relPath = "cfg.json";
+          format = "json";
+          value.nested.fn = x: x;
+        };
+      };
+    in
+    [
+      (areEqual false (builtins.tryEval cfg.constructFiles.cfg.content).success)
+    ];
+
+  "value type follows format" =
+    let
+      valueType =
+        format:
+        (evalWith {
+          constructFiles.cfg = {
+            relPath = "cfg";
+            inherit format;
+          };
+        }).constructFiles.cfg;
+      evalNull =
+        format:
+        (evalWith {
+          constructFiles.cfg = {
+            relPath = "cfg";
+            inherit format;
+            value.key = null;
+          };
+        }).constructFiles.cfg.content;
+    in
+    [
+      # null is rejected at evaluation time for TOML only
+      (areEqual false (builtins.tryEval (evalNull "toml")).success)
+      (areEqual true (builtins.tryEval (evalNull "json")).success)
+      (areEqual true (builtins.tryEval (evalNull "yaml")).success)
+      # format = null keeps working (value is unused)
+      (areEqual "" (valueType null).content)
+    ];
+
+  "setting value without format is an error" =
+    let
+      contentWith =
+        valueDef:
+        (evalWith {
+          constructFiles.cfg = {
+            relPath = "cfg";
+            value = valueDef;
+          };
+        }).constructFiles.cfg.content;
+    in
+    [
+      (areEqual false
+        (builtins.tryEval (contentWith {
+          key = "x";
+        })).success
+      )
+      # even a mkDefault definition counts as "set"
+      (areEqual false (builtins.tryEval (contentWith (lib.mkDefault { key = "x"; }))).success)
     ];
 }
