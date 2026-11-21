@@ -3,7 +3,6 @@ maybe_compile:
   config,
   wlib,
   lib,
-  luajit,
   bash,
   ...
 }:
@@ -64,10 +63,6 @@ let
     if config.exePath == "" then "${config.package}" else "${config.package}/${config.exePath}"
   } --cmd ${lib.escapeShellArg "source${luarc-path}"} ${args}";
 
-  luaEnv = (config.package.lua.withPackages or luajit.withPackages) config.settings.nvim_lua_env;
-  NVIM_LUA_PATH = ((config.package.lua or luajit).pkgs.luaLib.genLuaPathAbsStr luaEnv);
-  NVIM_LUA_CPATH = ((config.package.lua or luajit).pkgs.luaLib.genLuaCPathAbsStr luaEnv);
-
   manifest-path = lib.escapeShellArg "${placeholder config.outputName}/${config.binName or ""}-rplugin.vim";
 
   buildCommands =
@@ -83,24 +78,8 @@ let
           data = manifest-path;
         }
         ++ dal
-        ++ [
-          {
-            name = "NIX_PROPAGATED_LUA_PATH";
-            type = "UNPROCESSED";
-            data =
-              (wrapcmd "wrapperSuffixEnv LUA_PATH ';' ${lib.escapeShellArg NVIM_LUA_PATH}")
-              + "\necho \"wrapperSuffixEnv LUA_PATH ';' \${LUA_PATH@Q}\" >> ${outpath}";
-          }
-          {
-            name = "NIX_PROPAGATED_LUA_CPATH";
-            type = "UNPROCESSED";
-            data =
-              (wrapcmd "wrapperSuffixEnv LUA_CPATH ';' ${lib.escapeShellArg NVIM_LUA_CPATH}")
-              + "\necho \"wrapperSuffixEnv LUA_CPATH ';' \${LUA_CPATH@Q}\" >> ${outpath}";
-          }
-        ]
         ++ lib.optional isFinal {
-          name = "NIX_GENERATED_VIMINIT";
+          name = "VIMINIT";
           type = "envDefault";
           esc-fn = lib.escapeShellArg;
           attr-name = "VIMINIT";
@@ -148,8 +127,6 @@ let
           [ (wrapcmd "cd ${esc-fn v.data}") ]
         else if v.type or null == "runShell" then
           [ (wrapcmd v.data) ]
-        else if v.type or null == "UNPROCESSED" then
-          [ v.data ]
         else
           [ ]
       ))

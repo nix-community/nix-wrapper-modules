@@ -23,7 +23,7 @@ let
           # the others, however, are ordered to be before INIT_MAIN via specMods setting
           # after = [ "INIT_MAIN" ];
           config = ''
-            my_assert(vim.g.main_init_test_ran == 1, "config directory not loaded correctly")
+            test_assert(vim.g.main_init_test_ran == 1, "config directory not loaded correctly")
             os.exit(0)
           '';
         };
@@ -31,7 +31,7 @@ let
           data = null;
           type = "lua";
           config = ''
-            _G.my_assert = function(cond, ...)
+            _G.test_assert = function(cond, ...)
               if cond then
                 return ...
               else
@@ -40,9 +40,10 @@ let
                 os.exit(1)
               end
             end
-            _G.assert_call = function(...) return my_assert(pcall(...)) end
+            _G.assert_call = function(...) return test_assert(pcall(...)) end
           '';
         };
+        config.specs.propagatedLuaDepsTest = pkgs.vimPlugins.luasnip;
         config.info.infotest = lib.generators.mkLuaInline "vim.fn.stdpath('config')";
         config.specs.infotest = {
           data = null;
@@ -50,8 +51,8 @@ let
           info.infotest = lib.generators.mkLuaInline "vim.fn.stdpath('config')";
           config = ''
             local info = ...
-            my_assert(vim.fn.stdpath('config') == info.infotest, "integrated info fetch did not work")
-            my_assert(
+            test_assert(vim.fn.stdpath('config') == info.infotest, "integrated info fetch did not work")
+            test_assert(
               vim.fn.stdpath('config') == assert_call(
                 assert_call(require, vim.g.nix_info_plugin_name),
                 nil,
@@ -68,7 +69,7 @@ let
           info.infotest = lib.generators.mkLuaInline "vim.fn.stdpath('config')";
           config = ''
             (local (info) ...)
-            (_G.my_assert (= info.infotest (vim.fn.stdpath "config")) "integrated info fetch did not work for fennel")
+            (_G.test_assert (= info.infotest (vim.fn.stdpath "config")) "integrated info fetch did not work for fennel")
             (_G.assert_call require "mini.base16")
           '';
         };
@@ -88,6 +89,7 @@ let
           '';
         };
         config.settings.config_directory = ./testconfig;
+        config.info.enabledSpecs = builtins.mapAttrs (_: v: v.enable) config.specs;
         config.specMods =
           { name, ... }:
           {
@@ -102,10 +104,14 @@ let
     config.wrapperImplementation = "shell";
     config.settings.dont_link = true;
   };
+  binary = nvimpkg.wrap {
+    config.wrapperImplementation = "binary";
+  };
 in
 pkgs.runCommand "neovim-test" { } ''
   export HOME=$(mktemp -d)
   ${runpkg nvimpkg}
   ${runpkg shellAndDontLink}
+  ${runpkg binary}
   touch "$out"
 ''
