@@ -46,9 +46,9 @@
   config = {
     flags."--config" = config.constructFiles.generatedConfig.path;
     constructFiles.generatedConfig = {
-      content = builtins.toJSON config.settings;
+      format = "toml";
+      value = config.settings;
       relPath = "${config.binName}-config.toml";
-      builder = ''${pkgs.remarshal}/bin/json2toml "$1" "$2"'';
     };
 
     package = lib.mkDefault pkgs.satty;
