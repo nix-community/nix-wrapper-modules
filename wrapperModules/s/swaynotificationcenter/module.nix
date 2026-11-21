@@ -66,7 +66,10 @@
         PartOf = [ "graphical-session.target" ];
         After = [ "graphical-session.target" ];
         ConditionEnvironment = "WAYLAND_DISPLAY";
-        X-Restart-Triggers = [ config.constructFiles.generatedConfig.path ];
+        X-Restart-Triggers = [
+          config.constructFiles.generatedConfig.path
+          config.constructFiles.generatedStyle.path
+        ];
       };
 
       Service = {
