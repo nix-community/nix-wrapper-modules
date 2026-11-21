@@ -13,7 +13,12 @@
     default = { };
     type = lib.types.attrsOf (
       lib.types.submodule (
-        { config, name, ... }:
+        {
+          config,
+          options,
+          name,
+          ...
+        }:
         {
           config.outPath =
             if config.relPath == "" then
@@ -61,15 +66,38 @@
               '';
             };
             value = lib.mkOption {
-              type = lib.types.anything;
+              type = wlib.types.structuredValueWith (
+                if config.format == null then
+                  { typeName = "serializable"; }
+                else
+                  {
+                    json.typeName = "JSON";
+                    yaml.typeName = "YAML";
+                    toml = {
+                      typeName = "TOML";
+                      nullable = false;
+                    };
+                  }
+                  .${config.format}
+              );
               default = { };
               description = ''
                 The value to serialize when `format` is set. Ignored otherwise.
+
+                Attribute sets are merged recursively and lists are concatenated.
+                `null` is allowed, except when `format = "toml"`.
               '';
             };
             content = lib.mkOption {
               type = lib.types.lines;
-              default = if config.format == null then "" else builtins.toJSON config.value;
+              default =
+                if config.format != null then
+                  builtins.toJSON config.value
+                # `value` was defined by someone (any priority above the option's own default)
+                else if options.value.highestPrio < (lib.mkOptionDefault null).priority then
+                  throw ''constructFiles.${name}: `value` is set but `format` is null; set `format` to "json", "toml" or "yaml".''
+                else
+                  "";
               defaultText = lib.literalExpression ''if format == null then "" else builtins.toJSON value'';
               description = ''
                 The content for the file to be added to the final derivation
