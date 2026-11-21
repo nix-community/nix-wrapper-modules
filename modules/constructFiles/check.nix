@@ -292,4 +292,18 @@ test "constructFiles" {
       # even a mkDefault definition counts as "set"
       (areEqual false (builtins.tryEval (contentWith (lib.mkDefault { key = "x"; }))).success)
     ];
+
+  "shorthand value types" =
+    let
+      inherit (self.lib.types) tomlValue jsonValue yamlValue;
+    in
+    [
+      (areEqual "TOML value" tomlValue.description)
+      (areEqual "JSON value" jsonValue.description)
+      (areEqual "YAML value" yamlValue.description)
+      (areEqual false (tomlValue.check null))
+      (areEqual true (jsonValue.check null))
+      (areEqual true (yamlValue.check null))
+      (areEqual true (tomlValue.check { a.b = [ 1 ]; }))
+    ];
 }

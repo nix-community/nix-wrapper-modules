@@ -66,20 +66,16 @@
               '';
             };
             value = lib.mkOption {
-              type = wlib.types.structuredValueWith (
+              type =
                 if config.format == null then
-                  { typeName = "serializable"; }
+                  wlib.types.structuredValueWith { typeName = "serializable"; }
                 else
                   {
-                    json.typeName = "JSON";
-                    yaml.typeName = "YAML";
-                    toml = {
-                      typeName = "TOML";
-                      nullable = false;
-                    };
+                    json = wlib.types.jsonValue;
+                    toml = wlib.types.tomlValue;
+                    yaml = wlib.types.yamlValue;
                   }
-                  .${config.format}
-              );
+                  .${config.format};
               default = { };
               description = ''
                 The value to serialize when `format` is set. Ignored otherwise.
