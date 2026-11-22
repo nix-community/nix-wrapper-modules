@@ -6,7 +6,10 @@
   ...
 }:
 {
-  imports = [ wlib.modules.default ];
+  imports = [
+    wlib.modules.default
+    wlib.modules.systemd
+  ];
 
   options = {
     settings = lib.mkOption {
@@ -53,6 +56,15 @@
       content = config.stylesheet;
       relPath = "${config.binName}-style.css";
     };
+
+    filesToPatch = [
+      "share/systemd/user/*.service"
+    ];
+
+    systemd.user.service.swaync.Unit.X-Restart-Triggers = [
+      config.constructFiles.generatedConfig.path
+      config.constructFiles.generatedStyle.path
+    ];
 
     flags = {
       "--config" = config.constructFiles.generatedConfig.path;
