@@ -16,9 +16,15 @@
     };
 
     nom = lib.mkOption {
+      type = lib.types.nullOr lib.types.bool;
+      default = null;
+      internal = true;
+    };
+
+    rom = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Use nix-output-monitor for Nix output";
+      description = "Use rom formatting for nix build output";
     };
 
     flake = lib.mkOption {
@@ -50,6 +56,9 @@
   };
 
   config = {
+    rom = lib.mkIf (config.nom != null) (
+      lib.warn "nix-wrapper-modules nh: config.nom is deprecated, please use config.rom instead." config.nom
+    );
     package = pkgs.nh;
 
     env =
@@ -65,10 +74,16 @@
           data = toString config.ask;
           esc-fn = toString;
         };
-        "NH_NOM" = {
-          data = toString config.nom;
-          esc-fn = toString;
-        };
+        ${
+          if lib.strings.versionAtLeast (config.package.version or "4.5.0") "4.5.0" then
+            "NH_ROM"
+          else
+            "NH_NOM"
+        } =
+          {
+            data = toString config.rom;
+            esc-fn = toString;
+          };
         "NH_FLAKE" = {
           data = "${config.flake}";
           esc-fn = toString;
