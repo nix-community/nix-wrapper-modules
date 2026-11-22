@@ -7,17 +7,10 @@
 }:
 
 let
-  inherit (tlib) test;
+  mkEnvPrint =
+    wrapper: wrapper.configuration.pkgs.runCommand "nh env test" { } "${lib.getExe wrapper} > $out";
 in
-test { wrapper = "nh"; } {
-  "wrapper initialization" =
-    let
-      wrapper = self.wrappers.nh.wrap {
-        inherit pkgs;
-      };
-    in
-    "[[ -x ${wrapper}/bin/nh ]]";
-
+tlib.test { wrapper = "nh"; } {
   "wrapper environment configuration" =
     let
       wrapper = self.wrappers.nh.wrap {
@@ -29,7 +22,7 @@ test { wrapper = "nh"; } {
           ''
         );
         ask = true;
-        nom = false;
+        rom = false;
         flake = "/foo/bar";
         searchChannel = "nixos-26.05";
 
@@ -37,15 +30,15 @@ test { wrapper = "nh"; } {
           LOG = "verbose";
         };
       };
+      scriptContains = tlib.fileContains (mkEnvPrint wrapper);
     in
-    ''
-      output="$(${wrapper}/bin/nh)"
-      [[ "$output" = *"NH_ASK=1"* ]]
-      [[ "$output" = *"NH_NOM=0"* ]]
-      [[ "$output" = *"NH_FLAKE=/foo/bar"* ]]
-      [[ "$output" = *"NH_SEARCH_CHANNEL=nixos-26.05"* ]]
-      [[ "$output" = *"NH_LOG=verbose"* ]]
-    '';
+    [
+      (scriptContains "NH_ASK=1")
+      (scriptContains "NH_ROM=")
+      (scriptContains "NH_FLAKE=/foo/bar")
+      (scriptContains "NH_SEARCH_CHANNEL=nixos-26.05")
+      (scriptContains "NH_LOG=verbose")
+    ];
 
   "dedicated option precedence" =
     let
@@ -65,10 +58,10 @@ test { wrapper = "nh"; } {
           SEARCH_CHANNEL = "nixos-25.11";
         };
       };
+      scriptContains = tlib.fileContains (mkEnvPrint wrapper);
     in
-    ''
-      output=$(${wrapper}/bin/nh)
-      [[ "$output" = *"NH_FLAKE=/foo/bar"* ]]
-      [[ "$output" = *"NH_SEARCH_CHANNEL=nixos-26.05"* ]]
-    '';
+    [
+      (scriptContains "NH_FLAKE=/foo/bar")
+      (scriptContains "NH_SEARCH_CHANNEL=nixos-26.05")
+    ];
 }
