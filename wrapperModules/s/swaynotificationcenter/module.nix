@@ -57,31 +57,14 @@
       relPath = "${config.binName}-style.css";
     };
 
-    systemd.user.service.swaync = {
-      overwrite = true;
+    filesToPatch = [
+      "share/systemd/user/*.service"
+    ];
 
-      Unit = {
-        Description = "Swaync notification daemon";
-        Documentation = [ "https://github.com/ErikReider/SwayNotificationCenter" ];
-        PartOf = [ "graphical-session.target" ];
-        After = [ "graphical-session.target" ];
-        ConditionEnvironment = "WAYLAND_DISPLAY";
-        X-Restart-Triggers = [
-          config.constructFiles.generatedConfig.path
-          config.constructFiles.generatedStyle.path
-        ];
-      };
-
-      Service = {
-        Type = "dbus";
-        BusName = "org.freedesktop.Notifications";
-        ExecStart = config.wrapperPaths.placeholder;
-        ExecReload = "${config.wrapperPaths.placeholder} --reload-config ; ${config.wrapperPaths.placeholder} --reload-css";
-        Restart = "on-failure";
-      };
-
-      Install.WantedBy = [ "graphical-session.target" ];
-    };
+    systemd.user.service.swaync.Unit.X-Restart-Triggers = [
+      config.constructFiles.generatedConfig.path
+      config.constructFiles.generatedStyle.path
+    ];
 
     flags = {
       "--config" = config.constructFiles.generatedConfig.path;
