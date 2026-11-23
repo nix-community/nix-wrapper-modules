@@ -5,9 +5,7 @@
   pkgs,
   ...
 }:
-let
-  tomlFmt = pkgs.formats.toml { };
-in
+
 {
   imports = [ wlib.modules.default ];
   options = {
@@ -60,9 +58,8 @@ in
       config.wrapper.${config.configDrvOutput}
     }/${config.generatedConfigDirname}";
     constructFiles.settings = {
-      content = builtins.readFile (
-        tomlFmt.generate config.constructFiles.settings.relPath config.settings
-      );
+      builder = "${lib.getExe' pkgs.remarshal "json2toml"} \"$1\" \"$2\"";
+      content = builtins.toJSON config.settings;
       output = lib.mkOverride 0 config.configDrvOutput;
       relPath = lib.mkOverride 0 "noctalia/settings.toml";
     };
