@@ -73,7 +73,6 @@
                     yaml = wlib.types.yamlValue;
                   }
                   .${config.format};
-              default = { };
               description = ''
                 The value to serialize when `format` is set. Ignored otherwise.
 
@@ -86,8 +85,8 @@
               default =
                 if config.format != null then
                   builtins.toJSON config.value
-                # `value` was defined by someone (any priority above the option's own default)
-                else if options.value.highestPrio < (lib.mkOptionDefault null).priority then
+                # `value` has no default, so any definition means the user set it
+                else if options.value.isDefined then
                   throw ''constructFiles.${name}: `value` is set but `format` is null; set `format` to "json", "toml" or "yaml".''
                 else
                   "";

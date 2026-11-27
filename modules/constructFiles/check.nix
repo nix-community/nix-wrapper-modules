@@ -83,7 +83,7 @@ test "constructFiles" {
     let
       wrapper =
         (evalWith {
-          constructFiles.cfg = {
+          constructFiles.foo = {
             relPath = "cfg.toml";
             format = "toml";
             value = settings;
@@ -106,7 +106,7 @@ test "constructFiles" {
     let
       wrapper =
         (evalWith {
-          constructFiles.cfg = {
+          constructFiles.foo = {
             relPath = "cfg.yaml";
             format = "yaml";
             value = settings;
@@ -125,7 +125,7 @@ test "constructFiles" {
   "format = json writes the JSON as is" =
     let
       cfg = evalWith {
-        constructFiles.cfg = {
+        constructFiles.foo = {
           relPath = "cfg.json";
           format = "json";
           value = settings;
@@ -134,7 +134,7 @@ test "constructFiles" {
       file = "${cfg.wrapper}/cfg.json";
     in
     [
-      (areEqual (builtins.toJSON settings) cfg.constructFiles.cfg.content)
+      (areEqual (builtins.toJSON settings) cfg.constructFiles.foo.content)
       (isFile file)
       (fileContains file ''"num":42'')
     ];
@@ -144,7 +144,7 @@ test "constructFiles" {
       wrapper =
         (evalWith {
           drv.__structuredAttrs = true;
-          constructFiles.cfg = {
+          constructFiles.foo = {
             relPath = "cfg.toml";
             format = "toml";
             passAsContent = true;
@@ -163,7 +163,7 @@ test "constructFiles" {
       wrapper =
         (evalWith {
           drv.__structuredAttrs = true;
-          constructFiles.cfg = {
+          constructFiles.foo = {
             relPath = "cfg.toml";
             format = "toml";
             value = settings;
@@ -182,7 +182,7 @@ test "constructFiles" {
         (evalWith (
           { config, ... }:
           {
-            constructFiles.cfg = {
+            constructFiles.foo = {
               relPath = "nested/dir/cfg.toml";
               format = "toml";
               value.some_file = "${placeholder config.outputName}/some/file";
@@ -200,7 +200,7 @@ test "constructFiles" {
     let
       wrapper =
         (evalWith {
-          constructFiles.cfg = {
+          constructFiles.foo = {
             relPath = "cfg.toml";
             format = "toml";
             value = settings;
@@ -217,7 +217,7 @@ test "constructFiles" {
       cfg = evalWith {
         imports = [
           {
-            constructFiles.cfg = {
+            constructFiles.foo = {
               relPath = "cfg.json";
               format = "json";
               value = {
@@ -227,7 +227,7 @@ test "constructFiles" {
             };
           }
           {
-            constructFiles.cfg.value = {
+            constructFiles.foo.value = {
               ui.theme = "dark";
               list = [ "b" ];
             };
@@ -245,13 +245,13 @@ test "constructFiles" {
           "a"
           "b"
         ];
-      } (builtins.fromJSON cfg.constructFiles.cfg.content))
+      } (builtins.fromJSON cfg.constructFiles.foo.content))
     ];
 
   "value rejects non-serializable values" =
     let
       cfg = evalWith {
-        constructFiles.cfg = {
+        constructFiles.foo = {
           relPath = "cfg.json";
           format = "json";
           value.nested.fn = x: x;
@@ -259,7 +259,7 @@ test "constructFiles" {
       };
     in
     [
-      (areEqual false (builtins.tryEval cfg.constructFiles.cfg.content).success)
+      (areEqual false (builtins.tryEval cfg.constructFiles.foo.content).success)
     ];
 
   "value type follows format" =
@@ -267,20 +267,20 @@ test "constructFiles" {
       valueType =
         format:
         (evalWith {
-          constructFiles.cfg = {
+          constructFiles.foo = {
             relPath = "cfg";
             inherit format;
           };
-        }).constructFiles.cfg;
+        }).constructFiles.foo;
       evalNull =
         format:
         (evalWith {
-          constructFiles.cfg = {
+          constructFiles.foo = {
             relPath = "cfg";
             inherit format;
             value.key = null;
           };
-        }).constructFiles.cfg.content;
+        }).constructFiles.foo.content;
     in
     [
       # null is rejected at evaluation time for TOML only
@@ -291,25 +291,36 @@ test "constructFiles" {
       (areEqual "" (valueType null).content)
     ];
 
-  "setting value without format is an error" =
+  "format and value must be set together" =
     let
-      contentWith =
-        valueDef:
-        (evalWith {
-          constructFiles.cfg = {
-            relPath = "cfg";
-            value = valueDef;
-          };
-        }).constructFiles.cfg.content;
+      evaluates =
+        def:
+        (builtins.tryEval
+          (evalWith {
+            constructFiles.foo = {
+              relPath = "foo";
+            }
+            // def;
+          }).constructFiles.foo.content
+        ).success;
     in
     [
-      (areEqual false
-        (builtins.tryEval (contentWith {
-          key = "x";
-        })).success
-      )
+      # both set or neither set: ok
+      (areEqual true (evaluates {
+        format = "toml";
+        value.key = "x";
+      }))
+      (areEqual true (evaluates { }))
+      (areEqual false (evaluates {
+        format = "toml";
+      }))
+      (areEqual false (evaluates {
+        value.key = "x";
+      }))
       # even a mkDefault definition counts as "set"
-      (areEqual false (builtins.tryEval (contentWith (lib.mkDefault { key = "x"; }))).success)
+      (areEqual false (evaluates {
+        value = lib.mkDefault { key = "x"; };
+      }))
     ];
 
   "shorthand value types" =
