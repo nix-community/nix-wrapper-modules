@@ -85,7 +85,6 @@
               default =
                 if config.format != null then
                   builtins.toJSON config.value
-                # `value` has no default, so any definition means the user set it
                 else if options.value.isDefined then
                   throw ''constructFiles.${name}: `value` is set but `format` is null; set `format` to "json", "toml" or "yaml".''
                 else
