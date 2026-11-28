@@ -9,7 +9,7 @@
   imports = [ wlib.modules.default ];
   options = {
     settings = lib.mkOption {
-      type = wlib.types.structuredValueWith { typeName = "YAML 1.1"; };
+      type = wlib.types.yamlValue;
       default = { };
       description = ''
         Configuration of ov.
@@ -21,9 +21,9 @@
     "--config" = config.constructFiles.generatedConfig.path;
   };
   config.constructFiles.generatedConfig = {
-    content = builtins.toJSON config.settings;
+    format = "yaml";
+    value = config.settings;
     relPath = "${config.binName}-config.yaml";
-    builder = ''${pkgs.remarshal}/bin/json2yaml "$1" "$2"'';
   };
   config.package = lib.mkDefault pkgs.ov;
   config.meta.maintainers = [ wlib.maintainers.rencire ];
