@@ -162,16 +162,14 @@
                 ''
             }
           else
+            local sourceDrvVarToConstruct=${lib.escapeShellArg "${name}Path"}
             ${
               if asContent then
                 # bash
-                ''constructFile "''$${name}" ${lib.escapeShellArg path}''
+                ''constructFile "$(cat "''${!sourceDrvVarToConstruct}")" ${lib.escapeShellArg path}''
               else
                 # bash
-                ''
-                  local sourceDrvVarToConstruct=${lib.escapeShellArg "${name}Path"}
-                  constructFile "''${!sourceDrvVarToConstruct}" ${lib.escapeShellArg path}
-                ''
+                ''constructFile "''${!sourceDrvVarToConstruct}" ${lib.escapeShellArg path}''
             }
           fi
         '';
